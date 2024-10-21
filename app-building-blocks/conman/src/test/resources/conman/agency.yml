@@ -1,0 +1,59 @@
+- uri : "/mock/listColumn/agency"
+  httpMethod : GET
+  bodyTemplate : true
+  body: |
+    {
+        "order" : 0,
+        "columns" : [
+          {
+            "title" : "englishLanguage",
+            "field" : "name.en",
+            "normaliseColumn" : "GENERIC_RENDERER",
+            "hidden" : false,
+            "sorting" : false,
+            "validation" : {
+                "required" : true
+            }
+          },
+          {
+              "title" : "nativeLanguage",
+              "field" : "name.nativeLang",
+              "normaliseColumn" : "GENERIC_RENDERER",<#assign seq = ["K3","CA","K1","FK","IN","GB","US","US-HF","US-TX"] >
+              "hidden" : ${seq?seq_contains(request.tenantId)?string('true', 'false')},
+              "sorting" : false,
+              "validation": {
+                  "required" : true
+              }
+          },
+          {
+              "title" : "active",
+              "normaliseColumn" : "STATUS_RENDERER",
+              "field" : "active",
+              "hidden" : false,
+              "sorting" : false,
+              "validation" : {
+                  "required" : true
+              }
+          },
+          {
+              "title" : {
+                  "en" : "_id",
+                  "es" : "_id"
+              },
+              "field" : "_id",
+              "hidden" : true,
+              "sorting" : false
+          },
+          {
+              "title" : {
+                  "en" : "type",
+                  "es" : "type"
+              },
+              "field" : "type",
+              "hidden" : true,
+              "sorting" : false
+          }
+    	]
+    }
+  contentType: application/json
+  statusCode: 200

@@ -1,0 +1,42 @@
+# Intake Elements API
+- request:
+    uri: /api/dctech/pdms/v1/intake-spi-data-elements
+    httpMethod: GET
+  response:
+    body: |-
+      {
+        "brands": {
+          "WMT": {
+            "legislations": {
+              "US_CA": {
+                "details": {
+                  "name" : "US_CA",
+                  "countryCode": "US",
+                  "stateCode" : "CA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "optout"
+                      }
+                    ]
+                  }
+                }
+              },
+              "US_VA": {
+              }
+            }
+          },
+          "SAMS": {
+          },
+          "BON": {
+          }
+        }
+      }
+    contentType: application/json
+    statusCode: 200

@@ -1,0 +1,58 @@
+server:
+  port: 7773
+dyna-beans:
+  init:
+    "map111" :
+      val:
+        a : "a1"
+        b : "b1"
+        c : 10
+#dyna-beans:
+#  scriptPathsByEngine:
+#    JAVASCRIPT: ["classpath:mongoInit.js"]
+#  init:
+#    "mongoClient":
+#      script:
+#        functionName: "getMongoClient"
+#        args:
+#          - val : "glm-dev-azure-cosmosdb"
+#          - val : "Qa7jqK2xDS7ImgMSnbuyJgqbUTUwQS9MOViHtSO4c1z6RyYWqe5wWCnJIJwrpzk619ZbAtob134pmXbvt1y23A=="
+#          - val : "glm-dev-azure-cosmosdb.mongo.cosmos.azure.com:10255"
+#          - val : "ssl=true&replicaSet=globaldb&maxIdleTimeMS=120000&appName=@glm-dev-azure-cosmosdb@&retrywrites=false&maxConnectionIdleTimeMS=60000&minSize=10&maxSize=20&connectTimeoutMS=10000&readTimeoutMS=60000"
+
+#    "connectionProvider":
+#      initDTO:
+#        fqcn: "lazydevs.persistence.impl.mongo.connection.MongoConnectionProvider"
+#        constructorArgs:
+#          - typeFqcn: "com.mongodb.client.MongoClient"
+#            beanName: "mongoClient"
+#          - typeFqcn: "java.lang.String"
+#            val: "conman-db"
+
+
+#crud-services-config:
+#  crudRepositoryInitTemplate: |-
+#    {
+#      "fqcn" : "lazydevs.persistence.impl.mongo.MongoCrudRepository",
+#      "constructorArgs" : [ {OConm
+#        "typeFqcn" : "lazydevs.persistence.connection.ConnectionProvider",
+#        "beanName" : "${connectionProviderBeanName}"
+#      }, {
+#        "typeFqcn" : "java.lang.Class",
+#        "val" : "${fqcn}"
+#      }, {
+#        "typeFqcn" : "java.lang.String",
+#        "val" : "${persistenceObjectName}"
+#      } ]
+#    }
+
+
+#### Overrides - 1
+conman:
+  mockServletUriMapping : "/mock/*"
+  mockMappingFiles: ["file:///Users/a0r00vt/ME/lazydevs/rest-easy/conman/src/test/resources/conman/mocks/**.yml"]
+#  dbEnabled : false
+#  entityMapping:
+#    fqcn: "lazydevs.conman.MockConfigEntity"
+#    connectionProviderBeanName: "connectionProvider"
+#    persistenceObjectName: "mockConfigs"

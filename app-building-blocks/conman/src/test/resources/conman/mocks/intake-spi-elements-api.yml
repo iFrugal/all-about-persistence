@@ -1,0 +1,291 @@
+# Intake Elements API
+- request:
+    uri: /api/dctech/pdms/v1/intake-spi-data-elements
+    httpMethod: GET
+  response:
+    bodyTemplate: true
+    body: |-
+      <#if request.params.brandCode?? && request.params.legislation?? && request.params.personaType?? >
+      {
+        "brands": {
+          "${request.params.brandCode[0]}": {
+            "legislations": {
+              "${request.params.legislation[0]}": {
+                "details": {
+                  "name" : "${request.params.legislation[0]}",
+                  "countryCode": "${request.params.legislation[0]?keep_before("_")}",
+                  "stateCode" : "${request.params.legislation[0]?keep_after("_")}"
+                },
+                "personaTypes": {
+                  "${request.params.personaType[0]}": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element2",
+                        "name": "Element 2",
+                        "shortDesc" : "Element 2 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      <#else>
+      {
+        "brands": {
+          "WMT": {
+            "legislations": {
+              "US_CA": {
+                "details": {
+                  "name" : "US_CA",
+                  "countryCode": "US",
+                  "stateCode" : "CA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element2",
+                        "name": "Element 2",
+                        "shortDesc" : "Element 2 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  },
+                  "associate": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              },
+              "US_VA": {
+                "details": {
+                  "name" : "US_VA",
+                  "countryCode": "US",
+                  "stateCode" : "VA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element3",
+                        "name": "Element 3",
+                        "shortDesc" : "Element 3 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  },
+                  "associate": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "SAMS": {
+            "legislations": {
+              "US_CA": {
+                "details": {
+                  "name" : "US_CA",
+                  "countryCode": "US",
+                  "stateCode" : "CA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element2",
+                        "name": "Element 2",
+                        "shortDesc" : "Element 2 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  },
+                  "associate": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              },
+              "US_VA": {
+                "details": {
+                  "name" : "US_VA",
+                  "countryCode": "US",
+                  "stateCode" : "VA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element3",
+                        "name": "Element 3",
+                        "shortDesc" : "Element 3 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  },
+                  "associate": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "BON": {
+            "legislations": {
+              "US_CA": {
+                "details": {
+                  "name" : "US_CA",
+                  "countryCode": "US",
+                  "stateCode" : "CA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element2",
+                        "name": "Element 2",
+                        "shortDesc" : "Element 2 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  },
+                  "associate": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              },
+              "US_VA": {
+                "details": {
+                  "name" : "US_VA",
+                  "countryCode": "US",
+                  "stateCode" : "VA"
+                },
+                "personaTypes": {
+                  "customer": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_OUT"
+                      },
+                      {
+                        "id": "element3",
+                        "name": "Element 3",
+                        "shortDesc" : "Element 3 - Short Desc...",
+                        "category": "use",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  },
+                  "associate": {
+                    "spiDataElements": [
+                      {
+                        "id": "geoLocation",
+                        "name": "Geo Location",
+                        "shortDesc" : "Geo Location - Short Desc...",
+                        "category": "process",
+                        "defaultPreference": "OPT_IN"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      </#if>
+    contentType: application/json
+    statusCode: 200

@@ -1,27 +1,278 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.ifrugal</groupId>
     <artifactId>all-about-persistence</artifactId>
     <packaging>pom</packaging>
-    <version>${revision}</version>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <name>all-about-persistence</name>
+    <description>all-about-persistence</description>
+    <url>https://github.com/iFrugal/all-about-persistence</url>
+
+    <organization>
+        <url>https://github.com/iFrugal</url>
+        <name>iFrugal</name>
+    </organization>
+    <inceptionYear>2020</inceptionYear>
+
+    <developers>
+        <developer>
+            <name>Abhijeet Rai</name>
+            <email>abhijeet.techrepo@gmail.com</email>
+            <organization>iFrugal</organization>
+            <organizationUrl>https://github.com/iFrugal</organizationUrl>
+            <timezone>UTC+05:30</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:iFrugal/all-about-persistence.git</connection>
+        <developerConnection>scm:git:git@github.com:iFrugal/all-about-persistence.git</developerConnection>
+        <url>scm:git:git@github.com:iFrugal/all-about-persistence.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <modules>
+        <module>lazydevs-utils</module>
         <module>persistence-api</module>
-        <module>file-persistence</module>
-        <module>persistence-utils</module>
+        <module>persistence-impls</module>
+        <module>app-building-blocks</module>
+        <module>app-building-blocks/crud-service</module>
     </modules>
 
-    <parent>
-        <groupId>com.github.ifrugal</groupId>
-        <artifactId>ifrugal-parent</artifactId>
-        <version>1.0.2</version>
-    </parent>
-
     <properties>
-        <revision>1.0-SNAPSHOT</revision>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>17</java.version>
+        <spring-boot.version>3.0.0</spring-boot.version>
+        <revision>1.0.0-SNAPSHOT</revision>
+        <jacoco.version>0.8.12</jacoco.version>
+        <!-- compile-dependencies versions -->
+        <slf4j-api.version>1.7.26</slf4j-api.version>
+        <!-- provided-dependencies versions -->
+        <lombok.version>1.18.20</lombok.version>
+        <!-- test-dependencies versions -->
+        <testng.version>6.14.3</testng.version>
+        <!-- plugin versions -->
+        <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
+
+        <log4j2.version>2.17.1</log4j2.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+
+
     </properties>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.orgmvn cleasn/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/
+            </url>
+        </repository>
+    </distributionManagement>
+
+
+
+
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <!-- Jacoco configuration -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>default-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${sonar.jacoco.itutCombinedReportPath}</dataFile>
+                            <haltOnFailure>true</haltOnFailure>
+                            <rules>
+                                <rule implementation="org.jacoco.maven.RuleConfiguration">
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit implementation="org.jacoco.report.check.Limit">
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0%</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>post-unit-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>target/jacoco.exec</dataFile>
+                            <outputDirectory>target/jacoco-ut</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <jacoco-agent.destfile>target/jacoco.exec</jacoco-agent.destfile>
+                    </systemPropertyVariables>
+                    <excludes>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!-- maven-release-plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <localCheckout>true</localCheckout>
+                    <!-- must be true -->
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                </configuration>
+            </plugin>
+            <!--maven-compiler-plugin : java version, annotation processors like lombok, mapstruct, etc. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-complier-plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- maven-source-plugin-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- sonar-maven-plugin -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.6.0.1398</version>
+            </plugin>
+            <!-- maven surefire-plugin : executes tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <parallel>all</parallel>
+                    <trimStackTrace>false</trimStackTrace>
+                    <testSourceDirectory>${project.basedir}/src/test/java
+                    </testSourceDirectory>
+                    <testClassesDirectory>${project.build.directory}/test-classes
+                    </testClassesDirectory>
+                    <testFailureIgnore>true</testFailureIgnore>
+                    <failIfNoTests>false</failIfNoTests>
+                    <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                    <systemPropertyVariables>
+                        <net.sourceforge.cobertura.datafile>target/cobertura/cobertura.ser
+                        </net.sourceforge.cobertura.datafile>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/*Test.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*IT.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>integration-test</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <failIfNoTests>false</failIfNoTests>
+                            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*Test.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ####### Common TEST Dependencies ###### -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
 
 </project>

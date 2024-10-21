@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Markdown Modal Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@1.9.1/dist/showdown.min.js"></script>
+    <style>
+        /* Basic styling for the modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Trigger/Open The Modal -->
+<button id="myBtn">Open Modal</button>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="markdownContent"></div>
+    </div>
+
+</div>
+
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks the button, open the modal
+    btn.onclick = function() {
+        var converter = new showdown.Converter(),
+         text =
+            '# Hello, Markdown!\n\n' +
+            'This is a modal displaying **Markdown** content.\n\n' +
+            '```javascript\n' +
+            'print("pre-----");\n' +
+            'var env = applicationContext.getBean("environment");\n' +
+            'var arrayOfKeys = ["athenaBaseUrl", "ngGatewayBaseUrl"];\n' +
+            'for(var i=0;i< arrayOfKeys.length; i++) {\n' +
+            '    var key = arrayOfKeys[i];\n' +
+            '    var value = env.getProperty(key);\n' +
+            '    print("key = "+ key+", value = "+ value);\n' +
+            '    PipelineContext.getCurrentContext().set(key, value);\n' +
+            '}\n' +
+            'var emrTenantMapping = getAthenaEmrTenantMapping();\n' +
+            'PipelineContext.getCurrentContext().set("emr_tenant_mapping_id", emrTenantMapping[\'id\']);\n' +
+            'PipelineContext.getCurrentContext().set("athenaPractiseId", emrTenantMapping[\'emr_native_id\']);\n' +
+            '```\n\n' + // Ensure closing backticks are followed by two newlines
+            '# Reader\n\n' + // Add extra newline before starting a new code block
+            '```yaml\n' + // Start YAML code block
+            'a:\n' +
+            '  b: "b1"\n' +
+            '```\n'
+    ,
+            html      = converter.makeHtml(text);
+
+        document.getElementById("markdownContent").innerHTML = html;
+        modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>

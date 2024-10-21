@@ -1,0 +1,35 @@
+- uri: /mock/200
+  httpMethod: GET
+  body: |-
+    {
+      "a" : "a1",
+      "b" : "b1",
+      "xyz" : {
+        "x" : "x1",
+        "y" : "y1",
+        "z" : "z1"
+      }
+    }
+  contentType: application/json
+  statusCode: 200
+  responseHeaders:
+    "foo": "bar"
+    "x": "y"
+
+- uri: /mock/200
+  httpMethod: POST
+  body: |-
+    {
+      "a" : "a1",
+      "b" : "b1",
+      "xyz" : {
+        "x" : "x1",
+        "y" : "y1",
+        "z" : "z1"
+      }
+    }
+  contentType: application/json
+  statusCode: 201
+  responseHeaders:
+    "foo": "bar"
+    "x": "y"

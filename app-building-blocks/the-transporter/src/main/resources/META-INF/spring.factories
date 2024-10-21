@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+lazydevs.transporter.TransporterCoreAutoConfiguration,\
+lazydevs.transporter.TransporterWebAutoConfiguration

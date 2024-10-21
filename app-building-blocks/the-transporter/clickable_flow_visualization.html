@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive Detailed Flow Visualization</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    mermaid.initialize({startOnLoad:true, securityLevel:'loose'});
+
+    // Details for each reader and writer
+    const details = {
+        'Pre-Execution Configuration': '# Hello, Markdown!\n\n' +
+            'This is a modal displaying **Markdown** content.\n\n' +
+            '```javascript\n' +
+            'print("pre-----");\n' +
+            'var env = applicationContext.getBean("environment");\n' +
+            'var arrayOfKeys = ["athenaBaseUrl", "ngGatewayBaseUrl"];\n' +
+            'for(var i=0;i< arrayOfKeys.length; i++) {\n' +
+            '    var key = arrayOfKeys[i];\n' +
+            '    var value = env.getProperty(key);\n' +
+            '    print("key = "+ key+", value = "+ value);\n' +
+            '    PipelineContext.getCurrentContext().set(key, value);\n' +
+            '}\n' +
+            'var emrTenantMapping = getAthenaEmrTenantMapping();\n' +
+            'PipelineContext.getCurrentContext().set("emr_tenant_mapping_id", emrTenantMapping[\'id\']);\n' +
+            'PipelineContext.getCurrentContext().set("athenaPractiseId", emrTenantMapping[\'emr_native_id\']);\n' +
+            '```\n\n' + // Ensure closing backticks are followed by two newlines
+            '# Reader\n\n' + // Add extra newline before starting a new code block
+            '```yaml\n' + // Start YAML code block
+            'a:\n' +
+            '  b: "b1"\n' +
+            '```\n',
+        'A1': `Reader: EMR Rest Reader
+Mode: BATCHED
+Batch Size: 1
+Read Instruction: GET /v1/27222001/documents/patientcase/changed ...`,
+        'A1W1': `Writer: Tenant JDBC Writer
+Action: CREATE
+SQL: INSERT INTO public.patient_case_changed ...`,
+        // Add more details for other readers and writers here
+    };
+
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+// Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // Function to show details on click
+    window.showDetails = function(id) {
+
+
+        var converter = new showdown.Converter(),
+            text = details[id] || 'No details available.',
+            html      = converter.makeHtml(text);
+
+        document.getElementById("markdownContent").innerHTML = html;
+        modal.style.display = "block";
+    };
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+});
+
+</script>
+
+<style>
+    .mermaid { margin: auto; }
+</style>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@1.9.1/dist/showdown.min.js"></script>
+    <style>
+        /* Basic styling for the modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="markdownContent"></div>
+    </div>
+
+</div>
+
+<div class="mermaid">
+graph TD
+    subgraph Pre
+        PreConfig["Pre-Execution Configuration"]:::clickable
+    end
+
+    subgraph Flow1
+        A1["Reader: EMR Rest Reader"]:::clickable
+        A1W1["Writer: Tenant JDBC Writer"]:::clickable
+        A1 --> A1W1
+    end
+
+    classDef clickable cursor:pointer;
+</div>
+
+<script>
+// Adding click event listeners after Mermaid renders the diagram
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        document.querySelectorAll('.clickable').forEach((element) => {
+            const id = element.textContent.trim();
+            element.addEventListener('click', () => window.showDetails(id));
+        });
+    }, 1000); // Delay to ensure Mermaid diagram is rendered
+});
+</script>
+
+</body>
+</html>

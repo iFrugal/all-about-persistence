@@ -1,0 +1,2 @@
+xorg.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+lazydevs.conman.ConmanAutoConfiguration

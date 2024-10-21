@@ -1,0 +1,29 @@
+- uri : /mock/100
+  httpMethod : GET
+  bodyObj :
+    a: a1
+    b: b1
+    xyz :
+      x : x1
+      y : y1
+      z : z1
+  contentType : application/json
+  statusCode : 200
+  responseHeaders:
+    "foo" : "bar"
+    "x" : "y"
+
+- uri : /mock/100
+  httpMethod : POST
+  bodyObj :
+    a: a1
+    b: b1
+    xyz :
+      x : x1
+      y : y1
+      z : z1
+  contentType : application/json
+  statusCode : 201
+  responseHeaders:
+    "foo" : "bar"
+    "x" : "y"
