@@ -1,0 +1,80 @@
+name: release and push to central
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up Java for publishing to Maven Central Repository
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'corretto'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Create settings.xml file
+        run: echo "$MAVEN_SETTINGS_XML" > ~/.m2/settings.xml
+        env:
+          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
+      - name: Debug MAVEN_SETTINGS_XML
+        run: |
+          echo "MAVEN_SETTINGS_XML: $MAVEN_SETTINGS_XML"
+          echo "Contents of MAVEN_SETTINGS_XML:"
+          echo "$MAVEN_SETTINGS_XML" | head -n 10  # Print the first few lines of the XML content
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MAVEN_SETTINGS_XML: ${{ secrets.MAVEN_SETTINGS_XML }}
+
+      - name: Debug settings.xml content from file
+        run: cat ~/.m2/settings.xml
+      - name: Build and analyze with Sonar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+
+      - name: Configure Git user
+        run: |
+          git config user.email "abhijeet.techrepo@gmail.com"
+          git config user.name "abhijeet.techrepo"
+          git pull origin master
+          cat ~/.m2/settings.xml
+      - name: release:prepare_and_perform
+        run: |
+          mvn -Darguments="-Dmaven.test.skip=true" -DscmCommentPrefix="[maven-release-plugin] [skip-ci] " -DtagNameFormat="@{project.version}" build-helper:parse-version release:clean release:prepare -DdevelopmentVersion='$'{parsedVersion.majorVersion}.'$'{parsedVersion.nextMinorVersion}.1-SNAPSHOT release:perform
+          #mvn --batch-mode release:perform
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #- name: Push Tags
+      #  run: |
+      #    git push --tags
+      #    git push origin master
