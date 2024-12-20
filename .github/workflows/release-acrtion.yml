@@ -38,7 +38,7 @@ jobs:
       - name: Create settings.xml file
         run: echo "$MAVEN_SETTINGS_XML" > ~/.m2/settings.xml
         env:
-          MAVEN_SETTINGS_XML: ${{ vars.MAVEN_SETTINGS_XML }}
+          MAVEN_SETTINGS_XML: ${{ vars.VAR_MAVEN_SETTINGS_XML }}
       - name: Debug MAVEN_SETTINGS_XML
         run: |
           echo "MAVEN_SETTINGS_XML: $MAVEN_SETTINGS_XML"
@@ -49,15 +49,15 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MAVEN_SETTINGS_XML: ${{ vars.MAVEN_SETTINGS_XML }}
+          MAVEN_SETTINGS_XML: ${{ vars.VAR_MAVEN_SETTINGS_XML }}
 
       - name: Debug settings.xml content from file
         run: cat ~/.m2/settings.xml
-      - name: Build and analyze with Sonar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      #- name: Build and analyze with Sonar
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+      #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #  run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
 
       - name: Configure Git user
         run: |
