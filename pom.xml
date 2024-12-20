@@ -62,6 +62,7 @@
         <sonar.organization>ifrugal</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.projectKey>iFrugal_all-about-persistence</sonar.projectKey>
+        <sonar.modules>app-building-commons,conman,crud-service,dyna-beans-injector,just-schedule-it-core,read-easy,the-transporter</sonar.modules>
 
 
     </properties>
