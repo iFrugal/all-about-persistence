@@ -53,11 +53,11 @@ jobs:
 
       - name: Debug settings.xml content from file
         run: cat ~/.m2/settings.xml
-      #- name: Build and analyze with Sonar
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-      #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      #  run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      - name: Build and analyze with Sonar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
 
       - name: Configure Git user
         run: |
