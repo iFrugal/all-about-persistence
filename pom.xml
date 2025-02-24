@@ -5,7 +5,7 @@
     <groupId>com.github.ifrugal</groupId>
     <artifactId>all-about-persistence</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
 
     <name>all-about-persistence</name>
     <description>all-about-persistence</description>
@@ -31,7 +31,7 @@
         <connection>scm:git:git@github.com:iFrugal/all-about-persistence.git</connection>
         <developerConnection>scm:git:git@github.com:iFrugal/all-about-persistence.git</developerConnection>
         <url>scm:git:git@github.com:iFrugal/all-about-persistence.git</url>
-        <tag>all-about-persistence-1.0.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
