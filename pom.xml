@@ -5,7 +5,7 @@
     <groupId>com.github.ifrugal</groupId>
     <artifactId>all-about-persistence</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>all-about-persistence</name>
     <description>all-about-persistence</description>
@@ -67,7 +67,7 @@
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.orgmvn cleasn/content/repositories/snapshots</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
