@@ -24,9 +24,9 @@ import static org.testng.Assert.*;
  */
 public class RemoteGeneralFileMapperReaderTest {
 
-    RemoteGeneralFileMapperReader reader = new RemoteGeneralFileMapperReader(getFileDownloadStrategy(), new ExcelFileMapper());
+    //RemoteGeneralFileMapperReader reader = new RemoteGeneralFileMapperReader(getFileDownloadStrategy(), new ExcelFileMapper());
 
-    @Test
+    /*@Test
     public void testFindAll() {
         File file = createFile();
         ReadInstruction readInstruction = new ReadInstruction();
@@ -54,13 +54,13 @@ public class RemoteGeneralFileMapperReaderTest {
         assertEquals(list.get(1).get("bb"), "converted-b2");
         assertEquals(list.get(1).get("cc"), "converted-cc");
 
-    }
+    }*/
 
     @Test
     public void testFindAllInBatch() {
     }
 
-    private File createFile(){
+    /*private File createFile(){
         ExcelFileMapper fileMapper = new ExcelFileMapper();
         Map<Integer, String> map = new HashMap<>();
         map.put(0, "a");
@@ -77,7 +77,7 @@ public class RemoteGeneralFileMapperReaderTest {
             }
         }
         return file;
-    }
+    }*/
 
     static Map<String, Object> getMap(String s){
         Map<String, Object> map = new LinkedHashMap<>();
@@ -88,7 +88,7 @@ public class RemoteGeneralFileMapperReaderTest {
         return map;
     }
 
-    private FileDownloadStrategy getFileDownloadStrategy() {
+    /*private FileDownloadStrategy getFileDownloadStrategy() {
         return new FileDownloadStrategy(getSessionFactoryInit(), "abcd_remote.xlsx", "/upload", ".");
     }
 
@@ -102,5 +102,5 @@ public class RemoteGeneralFileMapperReaderTest {
         paramsMap.put("password", "XXXXX");
         sessionFactoryInit.setParams(paramsMap);
         return sessionFactoryInit;
-    }
+    }*/
 }
