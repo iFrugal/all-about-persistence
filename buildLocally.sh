@@ -11,6 +11,6 @@ mvn clean deploy -B -U -T 10
 
 mvn clean
 mvn release:prepare
-mvn release:perform #-Darguments="-Dmaven.javadoc.skip=true"
+mvn release:perform -Darguments="-Dmaven.javadoc.skip=true"
 git push --tags
 git push origin master

@@ -8,6 +8,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>lazydevs-utils</artifactId>
+    <packaging>jar</packaging>
+
 
     <properties>
         <jakson.version>2.11.1</jakson.version>

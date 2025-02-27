@@ -12,6 +12,7 @@
     <modules>
         <module>read-easy</module>
         <module>dyna-beans-injector</module>
+        <module>crud-service</module>
         <module>the-transporter</module>
         <module>app-building-commons</module>
         <module>conman</module>

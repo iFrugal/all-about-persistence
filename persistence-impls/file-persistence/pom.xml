@@ -8,6 +8,8 @@
     </parent>
 
     <artifactId>file-persistence</artifactId>
+    <packaging>jar</packaging>
+
 
     <dependencies>
         <dependency>
