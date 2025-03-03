@@ -67,10 +67,10 @@ jobs:
           cat ~/.m2/settings.xml
       - name: release:prepare
         run: |
-          mvn release:prepare
+          mvn -Brelease:prepare
       - name: release:perform
         run: |
-          mvn release:perform
+          mvn -B release:perform
           #mvn -Darguments="-Dmaven.test.skip=true" -DscmCommentPrefix="[maven-release-plugin] [skip-ci] " -DtagNameFormat="@{project.version}" build-helper:parse-version release:clean release:prepare -DdevelopmentVersion='$'{parsedVersion.majorVersion}.'$'{parsedVersion.nextMinorVersion}.1-SNAPSHOT release:perform
           #mvn --batch-mode release:perform
         env:
