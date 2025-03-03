@@ -3,8 +3,8 @@ name: release and push to central
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  #pull_request:
+  #  branches: [ master ]
 
 jobs:
   publish:
@@ -65,16 +65,20 @@ jobs:
           git config user.name "abhijeet.techrepo"
           git pull origin master
           cat ~/.m2/settings.xml
-      - name: release:prepare_and_perform
+      - name: release:prepare
         run: |
-          mvn -Darguments="-Dmaven.test.skip=true" -DscmCommentPrefix="[maven-release-plugin] [skip-ci] " -DtagNameFormat="@{project.version}" build-helper:parse-version release:clean release:prepare -DdevelopmentVersion='$'{parsedVersion.majorVersion}.'$'{parsedVersion.nextMinorVersion}.1-SNAPSHOT release:perform
+          mvn release:prepare
+      - name: release:perform
+        run: |
+          mvn release:perform
+          #mvn -Darguments="-Dmaven.test.skip=true" -DscmCommentPrefix="[maven-release-plugin] [skip-ci] " -DtagNameFormat="@{project.version}" build-helper:parse-version release:clean release:prepare -DdevelopmentVersion='$'{parsedVersion.majorVersion}.'$'{parsedVersion.nextMinorVersion}.1-SNAPSHOT release:perform
           #mvn --batch-mode release:perform
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #- name: Push Tags
-      #  run: |
-      #    git push --tags
-      #    git push origin master
+      - name: Push Tags
+        run: |
+          git push --tags
+          git push origin master
