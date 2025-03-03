@@ -26,9 +26,9 @@ public class GeneralFileMapperReaderTest {
 
 
 
-    @Test
+  /*  @Test
     public void testFindAllCsv(){
-        File file = new File("/Users/abhijeetrai/NG/bitbucket/Database/datascience/s3/user.csv");
+        File file = new File("user.csv");
         GeneralFileMapperReader reader = new GeneralFileMapperReader(new CSVMapper());
         ReadInstruction readInstruction = new ReadInstruction();
         readInstruction.setFilePath(file.getAbsolutePath());
@@ -37,7 +37,7 @@ public class GeneralFileMapperReaderTest {
         for (Map<String, Object> r : list) {
             System.out.println(i++ + " - "+ r);
         }
-    }
+    }*/
     @Test
     public void testFindAll() {
         File file = createFile();

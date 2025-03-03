@@ -3,7 +3,7 @@
     <parent>
         <artifactId>all-about-persistence</artifactId>
         <groupId>com.github.ifrugal</groupId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>1.0.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -12,6 +12,7 @@
     <modules>
         <module>read-easy</module>
         <module>dyna-beans-injector</module>
+        <module>crud-service</module>
         <module>the-transporter</module>
         <module>app-building-commons</module>
         <module>conman</module>
