@@ -66,6 +66,16 @@ public class TemplateEngine {
                 }
             });
 
+            data.put("serde_serialize", new TemplateMethodModelEx() {
+                @Override
+                public Object exec(List arguments) throws TemplateModelException {
+                    if(arguments.size() != 1 ){
+                        throw new IllegalArgumentException("Method 'serde_serialize' requires exactly 1 Object");
+                    }
+                    return SerDe.JSON.serialize(arguments.get(0));
+                }
+            });
+
             Template e = new Template("", templateSource, this.configuration);
             e.process(data, writer);
         } catch (TemplateException | IOException e) {
