@@ -11,6 +11,7 @@
         <module>file-persistence</module>
         <module>rest-persistence</module>
         <module>simple-jdbc-persistence</module>
+        <module>mongo-persistence</module>
     </modules>
 
     <artifactId>persistence-impls</artifactId>
