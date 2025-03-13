@@ -203,7 +203,7 @@ public class ConfiguredReadController {
     }
 
     @PostMapping("/one")
-    public ResponseEntity<Object> findOne(@RequestParam String queryId, @RequestBody Map<String,Object> params){
+    public ResponseEntity<Object> findOne(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params){
         Query query = getRegisteredQuery(queryId);
         Map<String, Object> response = (Map<String, Object>) getGeneralReader(query.getReaderId()).findOne(getQuery(queryId, params, null, null));
         if (null == response) {
@@ -216,13 +216,13 @@ public class ConfiguredReadController {
 
 
     @PostMapping("/count")
-    public long count(@RequestParam String queryId, @RequestBody Map<String,Object> params){
+    public long count(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params){
         Query query = getRegisteredQuery(queryId);
         return getGeneralReader(query.getReaderId()).count(getQuery(queryId, params, null, null));
     }
 
     @PostMapping("/list")
-    public List<Map<String, Object>> findAll(@RequestParam String queryId, @RequestBody Map<String,Object> params,
+    public List<Map<String, Object>> findAll(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params,
                                              @RequestParam(value = "orderby", required = false) String orderby,
                                              @RequestParam(value = "orderdir", required = false) String orderdir,
                            @RequestParam(value = "cache", required = false, defaultValue = "true") boolean cache){
@@ -239,7 +239,7 @@ public class ConfiguredReadController {
     }
 
     @PostMapping("/page")
-    public Page<List<Map<String, Object>>> findPage(@RequestParam String queryId, @RequestBody Map<String,Object> params,
+    public Page<List<Map<String, Object>>> findPage(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params,
                                               @RequestParam(defaultValue = "1") int pageNum,
                                               @RequestParam(defaultValue = "10") int pageSize,
                                               @RequestParam(value = "orderby", required = false) String orderby,
@@ -253,7 +253,7 @@ public class ConfiguredReadController {
 
 
     @PostMapping("/export")
-    public void export(@RequestParam String queryId, @RequestBody Map<String,Object> params, @RequestParam(value = "orderby", required = false) String orderby,
+    public void export(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params, @RequestParam(value = "orderby", required = false) String orderby,
                        @RequestParam(value = "orderdir", required = false) String orderdir,
                        @RequestParam(required = false) Long countFromClient,
                        HttpServletResponse response) throws IOException {

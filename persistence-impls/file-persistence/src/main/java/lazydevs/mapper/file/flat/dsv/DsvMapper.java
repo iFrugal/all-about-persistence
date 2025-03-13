@@ -85,11 +85,9 @@ public class DsvMapper extends FlatFileMapper<String> {
 
     @Override
     protected <T> FileBatchIterator<T, String> getBatchIterator(InputStream inputStream, Charset charset, int batchSize, int noOfLinesToIgnore, Class<T> type,String template) {
-        try {
-            return getBatchIterator(IOUtils.lineIterator(inputStream, charset.name()), batchSize, noOfLinesToIgnore, type,template);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        return getBatchIterator(IOUtils.lineIterator(inputStream, charset.name()), batchSize, noOfLinesToIgnore, type,template);
+
     }
 
     @Override
@@ -103,11 +101,9 @@ public class DsvMapper extends FlatFileMapper<String> {
 
     @Override
     protected FileBatchIterator<Map<String, Object>, String> getBatchIterator(InputStream inputStream, Charset charset, int batchSize, int noOfLinesToIgnore,String rowTransformationTemplate) {
-        try {
+
             return getBatchIterator(IOUtils.lineIterator(inputStream, charset.name()), batchSize, noOfLinesToIgnore,rowTransformationTemplate);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
     private <T> FileBatchIterator<T, String> getBatchIterator(LineIterator lineIterator, int batchSize, int noOfLinesToIgnore, Class<T> type,String template) {

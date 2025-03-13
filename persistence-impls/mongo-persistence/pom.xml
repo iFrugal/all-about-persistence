@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.github.ifrugal</groupId>
         <artifactId>persistence-impls</artifactId>
-        <version>1.0.6-SNAPSHOT</version>
+        <version>1.0.6</version>
     </parent>
 
     <artifactId>mongo-persistence</artifactId>

@@ -7,7 +7,7 @@ export PATH=$JAVA_HOME/bin:$PATH
 #mvn versions:set -DnewVersion=$1
 #mvn versions:update-child-modules
 
-mvn clean deploy -B -U -T 10
+#mvn clean deploy -B -U -T 10
 
 mvn clean
 mvn release:prepare
