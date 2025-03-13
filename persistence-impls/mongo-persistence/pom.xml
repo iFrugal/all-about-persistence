@@ -10,9 +10,8 @@
     </parent>
 
     <artifactId>mongo-persistence</artifactId>
-<!--
-    <version>${project.parent.version}</version>
--->
+
+    <version>1.0.5</version>
     <packaging>jar</packaging>
 
 
