@@ -15,7 +15,7 @@
         <dependency>
             <groupId>com.github.ifrugal</groupId>
             <artifactId>lazydevs-utils</artifactId>
-            <version>1.0.8</version>
+            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 
