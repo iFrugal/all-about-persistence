@@ -3,7 +3,7 @@
     <parent>
         <artifactId>all-about-persistence</artifactId>
         <groupId>com.github.ifrugal</groupId>
-        <version>1.0.5</version>
+        <version>1.0.7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -11,7 +11,7 @@
         <module>file-persistence</module>
         <module>rest-persistence</module>
         <module>simple-jdbc-persistence</module>
-        <module>mongo-persistence</module>
+        <module>mongodb-persistence</module>
     </modules>
 
     <artifactId>persistence-impls</artifactId>
