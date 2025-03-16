@@ -3,7 +3,7 @@
     <parent>
         <groupId>com.github.ifrugal</groupId>
         <artifactId>persistence-impls</artifactId>
-        <version>1.0.10</version>
+        <version>1.0.11-SNAPSHOT</version>
     </parent>
 
     <artifactId>mongodb-persistence</artifactId>
