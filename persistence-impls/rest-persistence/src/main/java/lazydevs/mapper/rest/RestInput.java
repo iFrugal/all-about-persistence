@@ -18,6 +18,7 @@ public class RestInput {
     private String queryParams;
     private Map<String, String> headers;
     private String payload;
+    private Map<String, Object> payloadObject;
     private List<Body> bodies;
     private boolean multipart = false;
     private boolean closeResponse = true;
@@ -30,6 +31,7 @@ public class RestInput {
         queryParams = restInput.getQueryParams();
         headers = restInput.getHeaders() == null ? null : new LinkedHashMap<>(restInput.getHeaders());
         payload = restInput.getPayload();
+        payloadObject = restInput.getPayloadObject();
         bodies = restInput.getBodies() == null ? null : new ArrayList<>(restInput.getBodies());
         multipart = restInput.isMultipart();
         closeResponse = restInput.isCloseResponse();

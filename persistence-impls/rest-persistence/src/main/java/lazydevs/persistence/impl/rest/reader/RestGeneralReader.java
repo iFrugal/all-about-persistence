@@ -130,6 +130,9 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
 
   private RestOutput getResponse(@NonNull RestMapper restMapper, @NonNull RestInput restInput) {
         Map<String, String> headersToPrintInLog = new HashMap<>(restInput.getHeaders());
+        if(null != restInput.getPayloadObject()) {
+            restInput.setPayload(SerDe.JSON.serialize(restInput.getPayloadObject()));
+        }
         Optional<String> authHeader = headersToPrintInLog.keySet().stream().filter(key-> "authorization".equals(key.trim().toLowerCase())).findFirst();
         if(authHeader.isPresent()){
             headersToPrintInLog.put(authHeader.get(), "XXXXXXXXXXXX");
