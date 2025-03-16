@@ -1,6 +1,7 @@
 package lazydevs.mapper.utils.engine;
 
 
+import freemarker.ext.util.WrapperTemplateModel;
 import lazydevs.mapper.utils.SerDe;
 import lazydevs.mapper.utils.file.FileUtils;
 import freemarker.template.*;
@@ -72,7 +73,17 @@ public class TemplateEngine {
                     if(arguments.size() != 1 ){
                         throw new IllegalArgumentException("Method 'serde_serialize' requires exactly 1 Object");
                     }
-                    return SerDe.JSON.serialize(arguments.get(0));
+                    Object obj = arguments.get(0);
+
+                    // Unwrap FreeMarker's DefaultMapAdapter to get the actual Java object
+                    if (obj instanceof WrapperTemplateModel) {
+                        try {
+                            obj = ((WrapperTemplateModel) obj).getWrappedObject();
+                        } catch (Exception e) {
+                            throw new TemplateModelException("Failed to unwrap object", e);
+                        }
+                    }
+                    return SerDe.JSON.serialize(obj);
                 }
             });
 
