@@ -180,6 +180,9 @@ public class ConfiguredReadController {
     }
 
     private Map<String, Object> convert(Map<String, Object> row, GeneralTransformer transformer, Map<String, Object> params){
+        if(null == transformer){
+            return row;
+        }
         Map<String, Object> modifiedRow = decorateDatapoints(row, params);
         Map<String, Object> convert = transformer.convert(modifiedRow);
         convert.remove("request");
