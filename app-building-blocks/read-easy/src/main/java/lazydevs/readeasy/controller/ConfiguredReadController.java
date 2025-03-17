@@ -141,6 +141,7 @@ public class ConfiguredReadController {
 
     private Object getQuery(String queryId, Map<String,Object> params, String orderby, String orderdir){
         Query query = getRegisteredQuery(queryId);
+        params = new HashMap<>(params);
         paramValidator.validate(queryId, query.getParams(), params);
         String sort = "{}";
 
@@ -215,6 +216,15 @@ public class ConfiguredReadController {
             return ResponseEntity.status(HttpStatus.valueOf(statusCodeWhenNoRecordsFound)).body("Resource not found with id=" + queryId);
         }
         return ResponseEntity.ok(convert(response, query.getRowTransformer(), params));
+    }
+
+    public Map<String, Object> findOneAsMap(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params){
+        Query query = getRegisteredQuery(queryId);
+        Map<String, Object> response = (Map<String, Object>) getGeneralReader(query.getReaderId()).findOne(getQuery(queryId, params, null, null));
+        if (null != response) {
+            response = convert(response, query.getRowTransformer(), params);
+        }
+        return response;
     }
 
 

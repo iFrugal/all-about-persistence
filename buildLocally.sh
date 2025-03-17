@@ -11,6 +11,7 @@
 
 mvn clean
 mvn release:prepare #-Darguments="-Dmaven.javadoc.skip=true"
-mvn release:perform #-Darguments="-Dmaven.javadoc.skip=true"
+mvn release:perform -Darguments="-DnexusStagingDeployTimeoutMinutes=20"
+
 git push --tags
 git push origin master
