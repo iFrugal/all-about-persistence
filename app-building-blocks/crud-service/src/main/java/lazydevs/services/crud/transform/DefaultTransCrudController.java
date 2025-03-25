@@ -29,7 +29,7 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
 
 
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<DTO> findById(@PathVariable("id") String id, @RequestParam(required = false) Set<String> projection) {
+    public ResponseEntity<DTO> findById(@PathVariable("id") String id, @RequestParam(value = "projection", required = false) Set<String> projection) {
         DTO dto = convertToDTO(findOneEntity(id, projection));
         return status(null == dto ? NOT_FOUND : OK).body(dto);
     }
@@ -65,8 +65,8 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
     @SneakyThrows
     @PatchMapping(path = "/{id}", consumes = "application/json-patch+json", produces = APPLICATION_JSON_VALUE)
     public ResponseEntity<DTO> patch(@PathVariable String id, @RequestBody List<JsonPatchOperation> jsonPatch) {
-        validateJsonPatch(id, jsonPatch);
         T old = ensureItExists(id);
+        validateJsonPatch(old, jsonPatch);
         JsonPatch patch =  JsonPatch.fromJson(JSON.getOBJECT_MAPPER().convertValue(jsonPatch, JsonNode.class));
         T neww = applyPatch(patch, old);
         DTO dto = convertToDTO(neww);
@@ -76,7 +76,7 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
     }
 
     protected abstract Map<String, Set<String>> getAllowedOperationVsPath();
-    protected void validateJsonPatch(String id, List<JsonPatchOperation> jsonPatch) {
+    protected void validateJsonPatch(T old, List<JsonPatchOperation> jsonPatch) {
         final Map<String, Set<String>> allowedOperationVsPath = getAllowedOperationVsPath();
         jsonPatch.forEach(operation -> {
             if (allowedOperationVsPath.containsKey(operation.getOp())) {
@@ -85,6 +85,24 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
                 }
                 if (!allowedOperationVsPath.get(operation.getOp()).contains(operation.getPath())) {
                     throw new ValidationException(format("Operation op = '%s' is not allowed on path = '%s'", operation.getOp(), operation.getPath()));
+                }else {
+                    // ✅ Check if operation is "add"
+                    if ("add".equalsIgnoreCase(operation.getOp())) {
+                        // Extract field name from JSON Patch path
+                        String fieldName = operation.getPath().substring(1); // Remove leading "/"
+
+                        try {
+                            // Use reflection to get the value of the field
+                            Object oldValue = old.getClass().getDeclaredField(fieldName).get(old);
+
+                            // ✅ Ensure old field value is null before allowing "add" operation
+                            if (oldValue != null) {
+                                throw new ValidationException(format("Cannot add value to field '%s' as it already exists.", fieldName));
+                            }
+                        } catch (NoSuchFieldException | IllegalAccessException e) {
+                            throw new ValidationException(format("Invalid field '%s' in JSON Patch request.", fieldName));
+                        }
+                    }
                 }
             } else {
                 throw new ValidationException(format("Operation not allowed. op = '%s'", operation.getOp()));
