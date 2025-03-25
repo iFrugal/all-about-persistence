@@ -92,15 +92,20 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
                         String fieldName = operation.getPath().substring(1); // Remove leading "/"
 
                         try {
+                            // Get field reference
+                            java.lang.reflect.Field field = old.getClass().getDeclaredField(fieldName);
+                            field.setAccessible(true); // ✅ Allows access to private fields
                             // Use reflection to get the value of the field
-                            Object oldValue = old.getClass().getDeclaredField(fieldName).get(old);
+                            Object oldValue = field.get(old);
 
                             // ✅ Ensure old field value is null before allowing "add" operation
                             if (oldValue != null) {
                                 throw new ValidationException(format("Cannot add value to field '%s' as it already exists.", fieldName));
                             }
-                        } catch (NoSuchFieldException | IllegalAccessException e) {
+                        } catch (NoSuchFieldException e) {
                             throw new ValidationException(format("Invalid field '%s' in JSON Patch request.", fieldName));
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(format("Error accessing field '%s'. Ensure proper permissions.", fieldName), e);
                         }
                     }
                 }
