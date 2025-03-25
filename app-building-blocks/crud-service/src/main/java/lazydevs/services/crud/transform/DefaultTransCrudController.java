@@ -29,7 +29,7 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
 
 
     @GetMapping(value = "/{id}", produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<DTO> findById(@PathVariable("id") String id, @RequestParam(required = false) Set<String> projection) {
+    public ResponseEntity<DTO> findById(@PathVariable("id") String id, @RequestParam(value = "projection", required = false) Set<String> projection) {
         DTO dto = convertToDTO(findOneEntity(id, projection));
         return status(null == dto ? NOT_FOUND : OK).body(dto);
     }
@@ -64,7 +64,7 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
 
     @SneakyThrows
     @PatchMapping(path = "/{id}", consumes = "application/json-patch+json", produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<DTO> patch(@PathVariable String id, @RequestBody List<JsonPatchOperation> jsonPatch) {
+    public ResponseEntity<DTO> patch(@PathVariable("id") String id, @RequestBody List<JsonPatchOperation> jsonPatch) {
         validateJsonPatch(id, jsonPatch);
         T old = ensureItExists(id);
         JsonPatch patch =  JsonPatch.fromJson(JSON.getOBJECT_MAPPER().convertValue(jsonPatch, JsonNode.class));
