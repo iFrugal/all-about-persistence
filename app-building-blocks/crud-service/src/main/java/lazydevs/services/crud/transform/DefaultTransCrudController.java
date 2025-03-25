@@ -64,7 +64,7 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
 
     @SneakyThrows
     @PatchMapping(path = "/{id}", consumes = "application/json-patch+json", produces = APPLICATION_JSON_VALUE)
-    public ResponseEntity<DTO> patch(@PathVariable String id, @RequestBody List<JsonPatchOperation> jsonPatch) {
+    public ResponseEntity<DTO> patch(@PathVariable("id") String id, @RequestBody List<JsonPatchOperation> jsonPatch) {
         T old = ensureItExists(id);
         validateJsonPatch(old, jsonPatch);
         JsonPatch patch =  JsonPatch.fromJson(JSON.getOBJECT_MAPPER().convertValue(jsonPatch, JsonNode.class));
