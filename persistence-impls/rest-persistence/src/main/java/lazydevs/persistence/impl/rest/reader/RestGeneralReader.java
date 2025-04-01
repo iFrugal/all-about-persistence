@@ -10,6 +10,7 @@ import lazydevs.mapper.utils.engine.TemplateEngine;
 import lazydevs.mapper.utils.reflection.InitDTO;
 import lazydevs.mapper.utils.reflection.ReflectionUtils;
 import lazydevs.persistence.impl.rest.auth.RestAuth;
+git import lazydevs.persistence.impl.rest.reader.batchiterator.OffsetLimitBatchIterator;
 import lazydevs.persistence.reader.GeneralReader;
 import lazydevs.persistence.reader.GeneralTransformer;
 import lazydevs.persistence.reader.Page;
@@ -22,6 +23,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -66,13 +68,17 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         return fetchData(restInstruction);
     }
 
+    Function<RestInstruction, List<Map<String, Object>>> fetchDataFn = restInstruction -> fetchData(restInstruction);
+
+    Function<RestInstruction, Long> countFn = restInstruction -> count(restInstruction);
+
     @Override
     public BatchIterator<Map<String, Object>> findAllInBatch(int batchSize, @NonNull RestInstruction restInstruction, Map<String, Object> params) {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size should be greater than 0");
         }
         if(null == restInstruction.getBatchIteratorInitDTO()){
-            return new OffsetLimitBatchIterator(batchSize, restInstruction);
+            return new OffsetLimitBatchIterator(batchSize, restInstruction, fetchDataFn);
         }else{
             return getInterfaceReference(restInstruction.getBatchIteratorInitDTO(), RestBatchIterator.class);
         }
@@ -103,11 +109,6 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         }
     }
 
-    private long getPageCount(long totalRecords, int batchSize) {
-        long quotient = totalRecords / batchSize;
-        long remainder = totalRecords % batchSize;
-        return remainder == 0 ? quotient : quotient + 1;
-    }
 
     @Override
     public List<Map<String, Object>> distinct(@NonNull RestInstruction restInput, Map<String, Object> params) {
@@ -120,12 +121,24 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     }
 
     private List<Map<String, Object>> fetchData(@NonNull RestInstruction restInstruction) {
-        authorize(restInstruction);
-        RestOutput restOutput = getResponse(restMapper, restInstruction.getRequest());
+        RestOutput restOutput = authorizeAndCall(restInstruction);
         if(Objects.nonNull(restInstruction.getResponseExtractionLogic()))
             return parseResponse(restOutput, restInstruction.getResponseExtractionLogic());
         else
             return new ArrayList<>();
+    }
+
+    private List<Map<String, Object>> fetchDataForBatchIterator(@NonNull RestInstruction restInstruction) {
+        RestOutput restOutput = authorizeAndCall(restInstruction);
+        if(Objects.nonNull(restInstruction.getResponseExtractionLogic()))
+            return parseResponse(restOutput, restInstruction.getResponseExtractionLogic());
+        else
+            return new ArrayList<>();
+    }
+
+    private RestOutput authorizeAndCall(RestInstruction restInstruction){
+        authorize(restInstruction);
+        return getResponse(restMapper, restInstruction.getRequest());
     }
 
   private RestOutput getResponse(@NonNull RestMapper restMapper, @NonNull RestInput restInput) {
@@ -209,98 +222,8 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         MAP, LIST_OF_MAP, MAP_INSIDE_MAP, LIST_OF_MAP_INSIDE_MAP;
     }
 
-    private abstract class RestBatchIterator extends BatchIterator<Map<String, Object>>{
-        protected final RestInstruction restInstruction;
 
-        public RestBatchIterator(final int batchSize, RestInstruction restInstruction){
-            super(batchSize);
-            this.restInstruction = restInstruction;
-        }
-        @Override
-        public void close() {}
-    }
 
-    private class OffsetLimitBatchIterator extends RestBatchIterator {
-        private int offset;
-        private int pageNum = 1;
-        private boolean hasNextBatch = true;
-        public OffsetLimitBatchIterator(final int batchSize, RestInstruction restInstruction){
-            super(batchSize, restInstruction);
-        }
 
-        @Override
-        public boolean hasNext() {
-            return this.hasNextBatch;
-        }
 
-        @Override
-        public List<Map<String, Object>> next() {
-            log.info("Batch no.: {}, Batch size: {}", pageNum, batchSize);
-            if (!hasNextBatch) {
-                throw new NoSuchElementException("Could not find next batch.");
-            }
-            offset = (pageNum - 1) * batchSize;
-            List<Map<String, Object>> data = fetchData(copyRestInstruction(offset, batchSize));
-            hasNextBatch = !(data.size() < batchSize);
-            log.info("Records fetched: {}" , data.size());
-            pageNum++;
-            return data;
-        }
-
-        private RestInstruction copyRestInstruction(int offset, int limit) {
-            RestInstruction copy = new RestInstruction();
-            copy.setResponseExtractionLogic(restInstruction.getResponseExtractionLogic());
-            copy.setCountInstruction(restInstruction.getCountInstruction());
-            RestInput restInput = new RestInput(restInstruction.getRequest());
-            Map<String, Object> map = new HashMap<>();
-            map.put("offset", offset);
-            map.put("limit", limit);
-            restInput.setQueryParams(TemplateEngine.getInstance().generate(restInput.getQueryParams(), map));
-            copy.setRequest(restInput);
-            copy.setRestAuthInitDTO(restInstruction.getRestAuthInitDTO());
-            return copy;
-        }
-    }
-
-    private class PageBasedBatchIterator extends RestBatchIterator {
-        private long totalPages;
-        private boolean hasNextBatch = true;
-        private int pageNum = 1;
-
-        public PageBasedBatchIterator(final int batchSize, RestInstruction restInstruction){
-            super(batchSize, restInstruction);
-            this.totalPages = getPageCount(count(copyRestInstruction(pageNum, 1)), batchSize);
-        }
-
-        @Override
-        public boolean hasNext() {
-            return this.hasNextBatch;
-        }
-
-        @Override
-        public List<Map<String, Object>> next() {
-            log.info("Batch no.: {}, Batch size: {}", pageNum, batchSize);
-            if (!hasNextBatch) {
-                throw new NoSuchElementException("Could not find next batch.");
-            }
-            List<Map<String, Object>> data = fetchData(copyRestInstruction(pageNum, batchSize));
-            hasNextBatch = (pageNum != totalPages);
-            log.info("Records fetched: {}" , data.size());
-            pageNum++;
-            return data;
-        }
-
-        private RestInstruction copyRestInstruction(int pageNum, int pageSize) {
-            RestInstruction copy = new RestInstruction();
-            copy.setResponseExtractionLogic(restInstruction.getResponseExtractionLogic());
-            copy.setCountInstruction(restInstruction.getCountInstruction());
-            RestInput restInput = new RestInput(restInstruction.getRequest());
-            Map<String, Object> map = new HashMap<>();
-            map.put("pageNum", pageNum);
-            map.put("pageSize", pageSize);
-            restInput.setQueryParams(TemplateEngine.getInstance().generate(restInput.getQueryParams(), map));
-            copy.setRequest(restInput);
-            return copy;
-        }
-    }
 }

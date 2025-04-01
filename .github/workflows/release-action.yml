@@ -3,6 +3,8 @@ name: Release and Push to Central
 on:
   push:
     branches: [ master ]
+  #pull_request:
+  #  branches: [ master ]
 
 jobs:
   publish:
