@@ -47,7 +47,7 @@ public class BasicRequestFilter extends OncePerRequestFilter {
     public void setRequestContext(HttpServletRequest request, HttpServletResponse response){
         RequestContext context = current();
         context.setRequestUri(request.getRequestURI());
-        context.setHttpMethod(HttpMethod.resolve(request.getMethod()));
+        context.setHttpMethod(HttpMethod.valueOf(request.getMethod()));
         MDC.put("request", format("'%s'-'%s'", context.getRequestUri(), context.getHttpMethod()));
         context.setParams(new LinkedHashMap<>(request.getParameterMap()));
         Enumeration<String> headerNames = request.getHeaderNames();
