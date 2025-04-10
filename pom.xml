@@ -11,7 +11,7 @@
 
     <artifactId>all-about-persistence</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.21-SNAPSHOT</version>
+    <version>1.0.21</version>
 
     <name>all-about-persistence</name>
     <description>all-about-persistence</description>
@@ -21,7 +21,7 @@
         <connection>scm:git:git@github.com:iFrugal/all-about-persistence.git</connection>
         <developerConnection>scm:git:git@github.com:iFrugal/all-about-persistence.git</developerConnection>
         <url>scm:git:git@github.com:iFrugal/all-about-persistence.git</url>
-        <tag>all-about-persistence-1.0.7</tag>
+        <tag>all-about-persistence-1.0.21</tag>
     </scm>
 
     <modules>
