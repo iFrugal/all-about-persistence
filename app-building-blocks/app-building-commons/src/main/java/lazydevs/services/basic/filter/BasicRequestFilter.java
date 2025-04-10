@@ -25,11 +25,9 @@ import static lazydevs.services.basic.filter.RequestContext.current;
 public class BasicRequestFilter extends OncePerRequestFilter {
     @Autowired private HandlerExceptionResolver handlerExceptionResolver;
 
-    public static final String TENANT_CODE_HEADER = "tenant-code";
-    public static final String SELECTED_TENANT_CODE_HEADER = "selected-tenant-code";
-    public static final String USER_ID_HEADER = "ng-user-id";
-    public static final String ROLE_HEADER = "role";
-    public static final String REQUEST_ID_HEADER = "request-id";
+    public static final String USER_ID_HEADER = "x-user-id";
+    public static final String ROLE_HEADER = "x-role";
+    public static final String REQUEST_ID_HEADER = "x-request-id";
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, FilterChain filterChain) {
@@ -60,8 +58,6 @@ public class BasicRequestFilter extends OncePerRequestFilter {
         }
         context.setHeaders(headerMap);
         context.setUserId(extractAndSetToMDC(USER_ID_HEADER, false));
-        context.setTenantCode(extractAndSetToMDC(TENANT_CODE_HEADER, false));
-        context.setSelectedTenantCode(extractAndSetToMDC(SELECTED_TENANT_CODE_HEADER, false));
         context.setRole(extractAndSetToMDC(ROLE_HEADER, false));
         context.setRequestId(extractAndSetToMDC(REQUEST_ID_HEADER, false));
         if(null == context.getRequestId()){
