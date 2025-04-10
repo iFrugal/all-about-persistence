@@ -117,10 +117,10 @@ public class Conditional<T> {
         return false;
     }
 
-    public boolean notIn(T... tArr){
-        if(!isPresent()) return true;
-        if(null != tArr) {
-            return !Arrays.stream(tArr).allMatch(value::equals);
+    public boolean notIn(T... tArr) {
+        if (!isPresent()) return true;
+        if (tArr != null) {
+            return Arrays.stream(tArr).noneMatch(value::equals);
         }
         return true;
     }
