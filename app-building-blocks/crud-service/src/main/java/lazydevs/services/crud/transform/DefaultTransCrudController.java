@@ -15,6 +15,7 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 import static java.lang.String.format;
@@ -77,42 +78,59 @@ public abstract class DefaultTransCrudController<T extends BaseEntity, DTO> impl
 
     protected abstract Map<String, Set<String>> getAllowedOperationVsPath();
     protected void validateJsonPatch(T old, List<JsonPatchOperation> jsonPatch) {
-        final Map<String, Set<String>> allowedOperationVsPath = getAllowedOperationVsPath();
-        jsonPatch.forEach(operation -> {
-            if (allowedOperationVsPath.containsKey(operation.getOp())) {
-                if (!operation.getPath().startsWith("/")) {
-                    throw new ValidationException(format("Invalid path = '%s', Read: https://datatracker.ietf.org/doc/html/rfc6902/ , https://jsonpatch.com/  ", operation.getPath()));
-                }
-                if (!allowedOperationVsPath.get(operation.getOp()).contains(operation.getPath())) {
-                    throw new ValidationException(format("Operation op = '%s' is not allowed on path = '%s'", operation.getOp(), operation.getPath()));
-                }else {
-                    // ✅ Check if operation is "add"
-                    if ("add".equalsIgnoreCase(operation.getOp())) {
-                        // Extract field name from JSON Patch path
-                        String fieldName = operation.getPath().substring(1); // Remove leading "/"
+        Map<String, Set<String>> allowedOperationVsPath = this.getAllowedOperationVsPath();
 
-                        try {
-                            // Get field reference
-                            java.lang.reflect.Field field = old.getClass().getDeclaredField(fieldName);
-                            field.setAccessible(true); // ✅ Allows access to private fields
-                            // Use reflection to get the value of the field
-                            Object oldValue = field.get(old);
+        jsonPatch.forEach((operation) -> {
+            String op = operation.getOp();
+            String path = operation.getPath();
 
-                            // ✅ Ensure old field value is null before allowing "add" operation
-                            if (oldValue != null) {
-                                throw new ValidationException(format("Cannot add value to field '%s' as it already exists.", fieldName));
-                            }
-                        } catch (NoSuchFieldException e) {
-                            throw new ValidationException(format("Invalid field '%s' in JSON Patch request.", fieldName));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(format("Error accessing field '%s'. Ensure proper permissions.", fieldName), e);
-                        }
+            if (!allowedOperationVsPath.containsKey(op)) {
+                throw new ValidationException(String.format("Operation not allowed. op = '%s'", op));
+            }
+
+            if (!path.startsWith("/")) {
+                throw new ValidationException(String.format("Invalid path = '%s'. Must start with '/'. Read: https://datatracker.ietf.org/doc/html/rfc6902/ , https://jsonpatch.com/", path));
+            }
+
+            boolean matched = allowedOperationVsPath.get(op).stream()
+                    .anyMatch(allowedPath -> matchJsonPathPattern(allowedPath, path));
+
+            if (!matched) {
+                throw new ValidationException(String.format("Operation op = '%s' is not allowed on path = '%s'", op, path));
+            }
+
+            // "add" specific rule: reject if field already exists
+            if ("add".equalsIgnoreCase(op)) {
+                String fieldName = extractRootFieldName(path);
+                try {
+                    Field field = old.getClass().getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    Object oldValue = field.get(old);
+                    if (oldValue != null) {
+                        throw new ValidationException(String.format("Cannot add value to field '%s' as it already exists.", fieldName));
                     }
+                } catch (NoSuchFieldException e) {
+                    throw new ValidationException(String.format("Invalid field '%s' in JSON Patch request.", fieldName));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(String.format("Error accessing field '%s'. Ensure proper permissions.", fieldName), e);
                 }
-            } else {
-                throw new ValidationException(format("Operation not allowed. op = '%s'", operation.getOp()));
             }
         });
+    }
+
+    private boolean matchJsonPathPattern(String pattern, String actualPath) {
+        // Replace '*' with regex digit matcher (e.g. /files/\d+)
+        String regex = pattern
+                .replace("/", "\\/")
+                .replace("*", "\\d+")
+                .replace("-", "\\-");  // for add operations
+        return actualPath.matches(regex);
+    }
+
+    private String extractRootFieldName(String path) {
+        // E.g. "/packages/0/name" => "packages"
+        String[] tokens = path.split("/");
+        return tokens.length > 1 ? tokens[1] : "";
     }
 
 
