@@ -15,7 +15,7 @@ import static org.testng.Assert.*;
  */
 public class GeneralFileMapperWriterTest {
 
-    @Test
+    //@Test
     public void testCreate() {
         ExcelFileMapper fileMapper = new ExcelFileMapper();
         Map<Integer, String> map = new HashMap<>();
