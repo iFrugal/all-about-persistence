@@ -201,8 +201,8 @@ public class ConfiguredReadController {
 
     @ConditionalOnProperty("readeasy.admin.enabled")
     @PostMapping(value = "/register", consumes = MULTIPART_FORM_DATA_VALUE)
-    public void register(@RequestPart(required = false) String namespace,
-                         @RequestPart MultipartFile registrationFile) throws IOException {
+    public void register(@RequestPart(name = "namespace", required = false) String namespace,
+                         @RequestPart(name = "registrationFile") MultipartFile registrationFile) throws IOException {
         register(namespace, registrationFile.getInputStream());
     }
 
