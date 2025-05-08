@@ -253,8 +253,8 @@ public class ConfiguredReadController {
 
     @PostMapping("/page")
     public Page<List<Map<String, Object>>> findPage(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params,
-                                              @RequestParam(defaultValue = "1") int pageNum,
-                                              @RequestParam(defaultValue = "10") int pageSize,
+                                              @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
+                                              @RequestParam(value = "pageSize", defaultValue = "10") int pageSize,
                                               @RequestParam(value = "orderby", required = false) String orderby,
                                               @RequestParam(value = "orderdir", required = false) String orderdir){
         Query query = getRegisteredQuery(queryId);
