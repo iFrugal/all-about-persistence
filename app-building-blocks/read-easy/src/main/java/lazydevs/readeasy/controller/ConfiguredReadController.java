@@ -174,6 +174,9 @@ public class ConfiguredReadController {
 
 
     private List<Map<String, Object>> convert(List<Map<String, Object>> list, GeneralTransformer transformer, Map<String, Object> params){
+        if(null == list){
+            return Collections.emptyList();
+        }
         if(null == transformer){
             return list;
         }
