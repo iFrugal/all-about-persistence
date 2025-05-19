@@ -2,6 +2,9 @@ package lazydevs.persistence.reader;
 
 import lazydevs.mapper.utils.SerDe;
 import lazydevs.mapper.utils.engine.TemplateEngine;
+import lazydevs.mapper.utils.reflection.Init;
+import lazydevs.mapper.utils.reflection.InitDTO;
+import lazydevs.mapper.utils.reflection.ReflectionUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +23,7 @@ import static lazydevs.mapper.utils.engine.ScriptEngines.JAVASCRIPT;
 @Getter @Setter @ToString
 public class GeneralTransformer {
     private String template;
+    private String transformerFqcn;
     private String jsFunctionName;
     private boolean transformAllAtOnce;
     private boolean transformAndMergeToOriginal;
@@ -56,6 +60,9 @@ public class GeneralTransformer {
             return SerDe.JSON.deserializeToMap(TemplateEngine.getInstance().generate(getTemplate(), row));
         } else if (null != getJsFunctionName()) {
             return (Map<String, Object>) JAVASCRIPT.invokeFunction(getJsFunctionName(), row);
+        }else if(transformerFqcn != null){
+            GenericTransformer genericTransformer = ReflectionUtils.getInterfaceReference(Init.builder().fqcn(transformerFqcn).build(), GenericTransformer.class);
+            genericTransformer.transform(row);
         }
         return row;
     }
