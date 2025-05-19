@@ -62,7 +62,7 @@ public class GeneralTransformer {
             return (Map<String, Object>) JAVASCRIPT.invokeFunction(getJsFunctionName(), row);
         }else if(transformerFqcn != null){
             GenericTransformer genericTransformer = ReflectionUtils.getInterfaceReference(Init.builder().fqcn(transformerFqcn).build(), GenericTransformer.class);
-            genericTransformer.transform(row);
+            return genericTransformer.transform(row);
         }
         return row;
     }
