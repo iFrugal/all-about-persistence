@@ -8,6 +8,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>app-building-blocks</artifactId>
+    <name>app-building-blocks</name>
+    <description>app-building-blocks</description>
     <packaging>pom</packaging>
     <modules>
         <module>read-easy</module>

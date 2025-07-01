@@ -7,6 +7,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+
     <modules>
         <module>file-persistence</module>
         <module>rest-persistence</module>
@@ -15,6 +16,8 @@
     </modules>
 
     <artifactId>persistence-impls</artifactId>
+    <name>${project.artifactId}</name>
+    <description>${project.artifactId}</description>
     <packaging>pom</packaging>
 
     <dependencies>

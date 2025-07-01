@@ -8,7 +8,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>conman</artifactId>
-  <version>1.0.30-SNAPSHOT</version>
+    <name>${project.artifactId}</name>
+    <description>${project.artifactId}</description>
+    <version>1.0.30-SNAPSHOT</version>
     <packaging>jar</packaging>
 
 

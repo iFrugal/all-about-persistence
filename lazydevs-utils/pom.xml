@@ -7,7 +7,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>lazydevs-utils</artifactId>
+    <artifactId>persistence-utils</artifactId>
+    <name>${project.artifactId}</name>
+    <description>${project.artifactId}</description>
     <packaging>jar</packaging>
 
 

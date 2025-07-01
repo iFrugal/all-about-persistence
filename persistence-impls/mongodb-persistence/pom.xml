@@ -9,7 +9,8 @@
     <artifactId>mongodb-persistence</artifactId>
     <packaging>jar</packaging>
 
-    <name>mongodb-persistence</name>
+    <name>${project.artifactId}</name>
+    <description>${project.artifactId}</description>
     <url>http://maven.apache.org</url>
 
     <properties>

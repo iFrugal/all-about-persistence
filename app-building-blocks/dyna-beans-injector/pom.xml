@@ -8,6 +8,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dyna-beans-injector</artifactId>
+    <name>${project.artifactId}</name>
+    <description>${project.artifactId}</description>
     <packaging>jar</packaging>
 
 
