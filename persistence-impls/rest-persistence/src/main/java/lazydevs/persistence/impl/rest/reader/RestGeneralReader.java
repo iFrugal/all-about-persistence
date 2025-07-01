@@ -14,12 +14,13 @@ import lazydevs.persistence.reader.GeneralReader;
 import lazydevs.persistence.reader.GeneralTransformer;
 import lazydevs.persistence.reader.Page;
 import lazydevs.persistence.reader.Page.PageRequest;
+import lazydevs.persistence.util.ConditionEvaluator;
 import lazydevs.persistence.util.Conditional;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.ToString;
+import lazydevs.persistence.util.ParseUtils;
+import lazydevs.services.basic.exception.RESTException;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpStatus;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +29,6 @@ import static java.lang.String.format;
 import static lazydevs.mapper.utils.reflection.ReflectionUtils.getInterfaceReference;
 import static lazydevs.persistence.impl.rest.reader.RestGeneralReader.ResponseType.LIST_OF_MAP_INSIDE_MAP;
 import static lazydevs.persistence.impl.rest.reader.RestGeneralReader.ResponseType.MAP_INSIDE_MAP;
-import static org.apache.http.HttpStatus.SC_OK;
 
 /**
  * @author Abhijeet Rai
@@ -123,7 +123,7 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         authorize(restInstruction);
         RestOutput restOutput = getResponse(restMapper, restInstruction.getRequest());
         if(Objects.nonNull(restInstruction.getResponseExtractionLogic()))
-            return parseResponse(restOutput, restInstruction.getResponseExtractionLogic());
+            return parseResponse(restOutput, restInstruction.getResponseExtractionLogic(), restInstruction.getExceptionHandlingRules());
         else
             return new ArrayList<>();
     }
@@ -139,35 +139,82 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         }
         log.info("Calling API, Request : ( url = {}, params = {}, headers = {}, payload = {})",  restInput.getUrl(), restInput.getQueryParams(), headersToPrintInLog, restInput.getPayload());
         RestOutput restOutput = restMapper.call(restInput);
-        log.info("Response :  ( Status = {}, payload = {}, header = {})", restOutput.getStatusCode(), (restInput.isCloseResponse() ? restOutput.getPayloadAsString() : "payload is big, input-stream"), restOutput.getHeaders());
-        if (restOutput.getStatusCode() != SC_OK) {
+        log.debug("Response :  ( Status = {}, payload = {}, header = {})", restOutput.getStatusCode(), (restInput.isCloseResponse() ? restOutput.getPayloadAsString() : "payload is big, input-stream"), restOutput.getHeaders());
+        if (restOutput.getStatusCode() != HttpStatus.SC_OK) {
             throw new IllegalArgumentException(format(ERROR_MSG, restOutput.getStatusCode(), restOutput.getStatusDesc(), restOutput.getPayloadAsString()));
         }
 
         return restOutput;
     }
 
-    private List<Map<String, Object>> parseResponse(@NonNull RestOutput restOutput, @NonNull RestOutputExtractionLogic extractionLogic) {
-        switch (extractionLogic.getResponseType()) {
-            case MAP:
-                return Collections.singletonList(restOutput.getPayloadAsMap(extractionLogic.getSerDe()));
-            case LIST_OF_MAP:
-                return restOutput.getPayloadAsListOfMap(extractionLogic.getSerDe());
-            case MAP_INSIDE_MAP:
-            case LIST_OF_MAP_INSIDE_MAP:
-                return extractFromComplexObject(restOutput, extractionLogic);
-            default:
-                throw new IllegalArgumentException("Not Supported extractionLogic.getResponseType() =  " + extractionLogic.getResponseType());
+    private List<Map<String, Object>> parseResponse(@NonNull RestOutput restOutput, @NonNull RestOutputExtractionLogic extractionLogic, List<ExceptionHandling> exceptionHandlingRules) {
+        if (extractionLogic.getResponseType() == ResponseType.LIST_OF_MAP) {
+            return restOutput.getPayloadAsListOfMap(extractionLogic.getSerDe());
+        } else {
+            Map<String, Object> payloadAsMap = restOutput.getPayloadAsMap(extractionLogic.getSerDe());
+            applyExceptionRules(payloadAsMap, exceptionHandlingRules);
+            if(extractionLogic.getResponseType() == ResponseType.MAP) {
+                return Collections.singletonList(payloadAsMap);
+            }else {
+                return extractFromComplexObject(payloadAsMap, extractionLogic);
+            }
         }
     }
 
-    private List<Map<String, Object>> extractFromComplexObject(RestOutput restOutput, RestOutputExtractionLogic extractionLogic){
+    private void applyExceptionRules(Map<String, Object> payloadAsMap, List<ExceptionHandling> exceptionHandlingRules) {
+        for(ExceptionHandling rule : exceptionHandlingRules){
+            if(ConditionEvaluator.evaluate(rule.getFailureCondition(), payloadAsMap)){
+                log.warn("API failure detected for rule : {}", rule);
+                // Extract error details from response
+                String message = extractErrorMessage(rule.getErrorResponse(), payloadAsMap);
+                String customMessage = extractCustomMessage(rule.getErrorResponse(), payloadAsMap);
+
+                // Throw RESTException with extracted details
+                throw new RESTException(message, rule.getErrorResponse().getHttpStatus())
+                        .errorCode(rule.getErrorResponse().getErrorCode())
+                        .errorDesc(customMessage);
+            }
+        }
+    }
+
+    private String extractErrorMessage(ErrorResponse errorResponse, Map<String, Object> payloadAsMap) {
+        // Try primary message source
+        String message = Optional.ofNullable(errorResponse.getMessageFrom())
+                .map(field -> ParseUtils.getString(payloadAsMap, field))
+                .orElse(null);
+
+        // Try fallback message source
+        if (message == null) {
+            message = Optional.ofNullable(errorResponse.getFallbackMessageFrom())
+                    .map(field -> ParseUtils.getString(payloadAsMap, field))
+                    .orElse(null);
+        }
+
+        // Use static fallback message
+        if (message == null) {
+            message = errorResponse.getFallbackMessage();
+        }
+
+        return Optional.ofNullable(message)
+                .map(template -> TemplateEngine.getInstance().generate(template, payloadAsMap))
+                .orElse("API request failed");
+    }
+
+    /**
+     * Extract custom message (for errorDesc) from response using configuration and FreeMarker templating
+     */
+    private String extractCustomMessage(ErrorResponse errorResponse, Map<String, Object> payloadAsMap) {
+        return Optional.ofNullable(errorResponse.getCustomMessage())
+                .map(template -> TemplateEngine.getInstance().generate(template, payloadAsMap))
+                .orElseGet(() -> extractErrorMessage(errorResponse, payloadAsMap));
+    }
+
+    private List<Map<String, Object>> extractFromComplexObject(Map<String, Object> payloadAsMap, RestOutputExtractionLogic extractionLogic){
         if(!Conditional.of(extractionLogic.responseType).in(MAP_INSIDE_MAP, LIST_OF_MAP_INSIDE_MAP)){
             throw new IllegalArgumentException("This method extractFromComplexObject should be called only for "+ Arrays.asList(MAP_INSIDE_MAP, LIST_OF_MAP_INSIDE_MAP));
         }
         String attributeName = Objects.requireNonNull(extractionLogic.getAttributeToExtract());
-        Map<String, Object> map = restOutput.getPayloadAsMap(extractionLogic.getSerDe());
-        Object o = extractFromComplexObject(attributeName, map);
+        Object o = extractFromComplexObject(attributeName, payloadAsMap);
         return MAP_INSIDE_MAP.equals(extractionLogic.responseType) ? Arrays.asList((Map<String, Object>)o) : (List<Map<String, Object>>) o;
     }
 
@@ -182,12 +229,30 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     @Getter @Setter @ToString
     public static class RestInstruction{
         private RestInput request;
+        private List<ExceptionHandling> exceptionHandlingRules;
         private GeneralTransformer transformer;
         private RestOutputExtractionLogic responseExtractionLogic;
         private RestCountInstruction countInstruction;
         private InitDTO batchIteratorInitDTO;
         private InitDTO restAuthInitDTO;
         private boolean skipCallOnNullPayload = false;
+    }
+
+    @Data
+    public static class ErrorResponse {
+        private String messageFrom;
+        private String fallbackMessageFrom;
+        private String customMessage;
+        private String fallbackMessage;
+        private int httpStatus;
+        private String errorCode;
+        private Map<String, Object> additionalFields;
+    }
+
+    @Getter @Setter @ToString
+    public static class ExceptionHandling{
+        private ConditionEvaluator.ConditionRequest failureCondition;
+        private ErrorResponse errorResponse;
     }
 
     @Getter @Setter @ToString
