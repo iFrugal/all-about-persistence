@@ -35,13 +35,13 @@
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
             <artifactId>app-building-commons</artifactId>
-            <version>1.0.30-SNAPSHOT</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
             <artifactId>dyna-beans-injector</artifactId>
-            <version>1.0.30-SNAPSHOT</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
     </dependencies>
