@@ -18,10 +18,10 @@
     <url>https://github.com/iFrugal/all-about-persistence</url>
 
     <scm>
-        <connection>scm:git:git@github.com:iFrugal/all-about-persistence.git</connection>
-        <developerConnection>scm:git:git@github.com:iFrugal/all-about-persistence.git</developerConnection>
-        <url>scm:git:git@github.com:iFrugal/all-about-persistence.git</url>
-        <tag>all-about-persistence-1.0.7</tag>
+        <connection>scm:git:https://x-access-token:${env.GITHUB_TOKEN}@github.com/iFrugal/all-about-persistence.git</connection>
+        <developerConnection>scm:git:https://x-access-token:${env.GITHUB_TOKEN}@github.com/iFrugal/all-about-persistence.git</developerConnection>
+        <url>https://github.com/iFrugal/all-about-persistence</url>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
