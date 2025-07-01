@@ -12,7 +12,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
-            <artifactId>lazydevs-utils</artifactId>
+            <artifactId>persistence-utils</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
