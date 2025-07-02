@@ -9,14 +9,15 @@
 
 #mvn clean deploy -B -U -T 10
 
-mvn clean
-#mvn release:prepare #-Darguments="-Dmaven.javadoc.skip=true"
-#mvn release:perform -Darguments="-DnexusStagingDeployTimeoutMinutes=20"
+mvn clean install -Dgpg.skip=true -DskipTests=true
 
-mvn release:prepare release:perform -B \
-    -DautoVersionSubmodules=true \
-    -DpushChanges=true \
-    -Darguments="-Dmaven.javadoc.failOnError=false -DnexusStagingDeployTimeoutMinutes=20"
+
+#mvn clean
+
+#mvn release:prepare release:perform -B \
+#    -DautoVersionSubmodules=true \
+#    -DpushChanges=true \
+#    -Darguments="-Dmaven.javadoc.failOnError=false -DnexusStagingDeployTimeoutMinutes=20"
 
 
 #git push --tags

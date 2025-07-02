@@ -59,7 +59,7 @@ public class ConmanServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException{
         basicRequestFilter.setRequestContext(req, resp);
-        HttpMethod httpMethod = HttpMethod.resolve(req.getMethod());
+        HttpMethod httpMethod = HttpMethod.valueOf(req.getMethod());
         String uri = req.getRequestURI();
         String tenantId = current().getTenantCode();
         MockConfig data = conmanCache.getMockConfig(httpMethod, uri, tenantId);
