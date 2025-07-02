@@ -14,6 +14,9 @@ public class ParseUtils {
         return (List<Map<String, Object>>)get(map, attributeName);
     }
 
+    public static Map<String, Object> getMap(Map<String, Object> map, @NonNull String attributeName){
+        return (Map<String, Object>)get(map, attributeName);
+    }
     public static String getString(Map<String, Object> map, @NonNull String attributeName){
         return (String)get(map, attributeName);
     }
