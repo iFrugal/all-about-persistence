@@ -162,6 +162,9 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     }
 
     private void applyExceptionRules(Map<String, Object> payloadAsMap, List<ExceptionHandling> exceptionHandlingRules) {
+        if(null == exceptionHandlingRules){
+            return;
+        }
         for(ExceptionHandling rule : exceptionHandlingRules){
             if(ConditionEvaluator.evaluate(rule.getFailureCondition(), payloadAsMap)){
                 log.warn("API failure detected for rule : {}", rule);
