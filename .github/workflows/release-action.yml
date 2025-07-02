@@ -45,6 +45,7 @@ jobs:
           mvn -B -s ~/.m2/settings.xml \
             -Darguments="-Dmaven.test.skip=true" \
             -DscmCommentPrefix="[release] [skip ci] " \
+            -Dcentral.autoPublish=false -Dcentral.waitUntil=uploaded" \
             release:clean release:prepare release:perform
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
