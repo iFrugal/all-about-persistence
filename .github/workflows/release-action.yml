@@ -43,9 +43,8 @@ jobs:
       - name: Release and Deploy to Maven Central
         run: |
           mvn -B -s ~/.m2/settings.xml \
-            -Darguments="-Dmaven.test.skip=true" \
+            -Darguments="-Dmaven.test.skip=true -Dcentral.autoPublish=false -Dcentral.waitUntil=uploaded" \
             -DscmCommentPrefix="[release] [skip ci] " \
-            -Dcentral.autoPublish=false -Dcentral.waitUntil=uploaded" \
             release:clean release:prepare release:perform
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
