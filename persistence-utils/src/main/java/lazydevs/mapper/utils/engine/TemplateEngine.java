@@ -1,11 +1,16 @@
 package lazydevs.mapper.utils.engine;
 
 
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.cache.FileTemplateLoader;
+import freemarker.cache.MultiTemplateLoader;
+import freemarker.cache.TemplateLoader;
 import freemarker.ext.util.WrapperTemplateModel;
 import lazydevs.mapper.utils.SerDe;
 import lazydevs.mapper.utils.file.FileUtils;
 import freemarker.template.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -27,6 +32,33 @@ public class TemplateEngine {
 
     private void init() {
         this.configuration = new Configuration(new Version(2, 3, 23));
+
+        // Set up template loaders
+        ClassTemplateLoader classLoader = new ClassTemplateLoader(this.getClass(), "/templates");
+
+        // Handle FileTemplateLoader gracefully - it's optional
+        List<TemplateLoader> loaders = new ArrayList<>();
+        loaders.add(classLoader);
+
+        try {
+            FileTemplateLoader fileLoader = new FileTemplateLoader(new File("templates"));
+            loaders.add(fileLoader);
+            System.out.println("✅ FileTemplateLoader: Found templates directory");
+        } catch (IOException e) {
+            System.out.println("ℹ️  FileTemplateLoader: templates directory not found, using classpath only");
+            // Continue without file loader - this is OK
+        }
+
+        // Use available loaders
+        if (loaders.size() == 1) {
+            this.configuration.setTemplateLoader(loaders.get(0));
+        } else {
+            MultiTemplateLoader multiLoader = new MultiTemplateLoader(
+                    loaders.toArray(new TemplateLoader[0])
+            );
+            this.configuration.setTemplateLoader(multiLoader);
+        }
+
         this.configuration.setDefaultEncoding("UTF-8");
         this.configuration.setLocale(Locale.US);
         this.configuration.setNumberFormat("computer");
@@ -50,7 +82,7 @@ public class TemplateEngine {
     public void generate(Writer writer, String templateSource, Map<String, Object> datapoints) {
         try {
             Map<String, Object> data = new HashMap<>(datapoints);
-            data.put("uuid", (TemplateMethodModelEx)(list) -> UUID.randomUUID().toString());
+            data.put("uuid", new Uuid());
             data.put("eval", new Eval());
             //data.put("evalObject", new EvalObject());
             //data.put("evalJson", new EvalObjectAsJson());
@@ -91,6 +123,13 @@ public class TemplateEngine {
             e.process(data, writer);
         } catch (TemplateException | IOException e) {
             throw new RuntimeException("Exception when replacing values " + e.getMessage(), e);
+        }
+    }
+
+    private static class Uuid implements TemplateMethodModelEx {
+        @Override
+        public Object exec(List arguments) throws TemplateModelException {
+            return UUID.randomUUID().toString();
         }
     }
 
