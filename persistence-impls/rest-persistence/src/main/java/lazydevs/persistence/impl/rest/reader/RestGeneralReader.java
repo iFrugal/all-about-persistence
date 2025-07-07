@@ -278,7 +278,7 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     }
 
     @Getter @Setter @ToString
-    private static class RestOutputExtractionLogic{
+    public static class RestOutputExtractionLogic{
         @NonNull private ResponseType responseType;
         private String attributeToExtract;
         @NonNull private SerDe serDe = SerDe.JSON;
