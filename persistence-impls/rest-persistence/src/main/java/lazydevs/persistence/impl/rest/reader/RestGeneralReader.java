@@ -41,7 +41,7 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     private static final String NOT_YET_IMPLEMENTED = "Not yet implemented";
     @Setter private RestMapper restMapper = new ApacheHttpClientRestMapper();
     @Setter private RestAuth restAuth;
-    @Setter private Auditor auditor;
+    @Setter private Auditor auditor = new NoOpsAuditor();
 
     private void authorize(RestInstruction restInstruction){
         RestAuth restAuth;
@@ -374,6 +374,13 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
             restInput.setQueryParams(TemplateEngine.getInstance().generate(restInput.getQueryParams(), map));
             copy.setRequest(restInput);
             return copy;
+        }
+    }
+
+    public static class NoOpsAuditor implements Auditor {
+        @Override
+        public void audit() {
+
         }
     }
 }
