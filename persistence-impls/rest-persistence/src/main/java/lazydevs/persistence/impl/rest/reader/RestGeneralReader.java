@@ -9,6 +9,7 @@ import lazydevs.mapper.utils.SerDe;
 import lazydevs.mapper.utils.engine.TemplateEngine;
 import lazydevs.mapper.utils.reflection.InitDTO;
 import lazydevs.mapper.utils.reflection.ReflectionUtils;
+import lazydevs.persistence.Auditor;
 import lazydevs.persistence.impl.rest.auth.RestAuth;
 import lazydevs.persistence.reader.GeneralReader;
 import lazydevs.persistence.reader.GeneralTransformer;
@@ -18,6 +19,7 @@ import lazydevs.persistence.util.ConditionEvaluator;
 import lazydevs.persistence.util.Conditional;
 import lazydevs.persistence.util.ParseUtils;
 import lazydevs.services.basic.exception.RESTException;
+import lazydevs.services.basic.filter.RequestContext;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -39,6 +41,7 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     private static final String NOT_YET_IMPLEMENTED = "Not yet implemented";
     @Setter private RestMapper restMapper = new ApacheHttpClientRestMapper();
     @Setter private RestAuth restAuth;
+    @Setter private Auditor auditor;
 
     private void authorize(RestInstruction restInstruction){
         RestAuth restAuth;
@@ -122,6 +125,8 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
     private List<Map<String, Object>> fetchData(@NonNull RestInstruction restInstruction) {
         authorize(restInstruction);
         RestOutput restOutput = getResponse(restMapper, restInstruction.getRequest());
+        RequestContext.current().putAll(Map.of("restInstruction", restInstruction, "restOutput", restOutput));
+        auditor.audit();
         if(Objects.nonNull(restInstruction.getResponseExtractionLogic()))
             return parseResponse(restOutput, restInstruction.getResponseExtractionLogic(), restInstruction.getExceptionHandlingRules());
         else

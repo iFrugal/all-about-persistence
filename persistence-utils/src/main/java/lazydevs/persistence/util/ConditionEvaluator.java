@@ -143,9 +143,15 @@ public class ConditionEvaluator {
         try {
             switch (operator) {
                 case EQUALS:
+                    if(expectedValue instanceof String) {
+                        fieldValue = String.valueOf(fieldValue);
+                    }
                     return Objects.equals(fieldValue, expectedValue);
 
                 case NOT_EQUALS:
+                    if(expectedValue instanceof String) {
+                        fieldValue = String.valueOf(fieldValue);
+                    }
                     return !Objects.equals(fieldValue, expectedValue);
 
                 case GREATER_THAN:
