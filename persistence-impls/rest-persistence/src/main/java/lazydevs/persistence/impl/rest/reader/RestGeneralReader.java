@@ -124,9 +124,19 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
 
     private List<Map<String, Object>> fetchData(@NonNull RestInstruction restInstruction) {
         authorize(restInstruction);
-        RestOutput restOutput = getResponse(restMapper, restInstruction.getRequest());
-        RequestContext.current().putAll(Map.of("restInstruction", restInstruction, "restOutput", restOutput));
-        auditor.audit();
+        RestOutput restOutput = null;
+        try {
+            RequestContext.current().put("restInstruction", restInstruction);
+            restOutput = getResponse(restMapper, restInstruction.getRequest());
+            RequestContext.current().put("restOutput", restOutput);
+            if (restOutput.getStatusCode() != HttpStatus.SC_OK) {
+                throw new IllegalArgumentException(format(ERROR_MSG, restOutput.getStatusCode(), restOutput.getStatusDesc(), restOutput.getPayloadAsString()));
+            }
+        }finally {
+            if(restInstruction.audit) {
+                auditor.audit();
+            }
+        }
         if(Objects.nonNull(restInstruction.getResponseExtractionLogic()))
             return parseResponse(restOutput, restInstruction.getResponseExtractionLogic(), restInstruction.getExceptionHandlingRules());
         else
@@ -145,10 +155,6 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         log.info("Calling API, Request : ( url = {}, params = {}, headers = {}, payload = {})",  restInput.getUrl(), restInput.getQueryParams(), headersToPrintInLog, restInput.getPayload());
         RestOutput restOutput = restMapper.call(restInput);
         log.debug("Response :  ( Status = {}, payload = {}, header = {})", restOutput.getStatusCode(), (restInput.isCloseResponse() ? restOutput.getPayloadAsString() : "payload is big, input-stream"), restOutput.getHeaders());
-        if (restOutput.getStatusCode() != HttpStatus.SC_OK) {
-            throw new IllegalArgumentException(format(ERROR_MSG, restOutput.getStatusCode(), restOutput.getStatusDesc(), restOutput.getPayloadAsString()));
-        }
-
         return restOutput;
     }
 
@@ -244,6 +250,7 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
         private InitDTO batchIteratorInitDTO;
         private InitDTO restAuthInitDTO;
         private boolean skipCallOnNullPayload = false;
+        private boolean audit = false;
     }
 
     @Data
