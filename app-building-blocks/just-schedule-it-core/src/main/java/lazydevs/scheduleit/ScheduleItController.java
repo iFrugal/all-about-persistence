@@ -17,7 +17,7 @@ public class ScheduleItController {
     @Autowired private ScheduleItService scheduleItService;
 
     @GetMapping("/{scheduleName}")
-    public ScheduledInstructionDTO get(@PathVariable String scheduleName){
+    public ScheduledInstructionDTO get(@PathVariable(name = "scheduleName") String scheduleName){
         return new ScheduledInstructionDTO(scheduleItService.getSchedule(scheduleName));
     }
 
@@ -27,7 +27,7 @@ public class ScheduleItController {
     }
 
     @PostMapping("/{scheduleName}/run")
-    public void run(@PathVariable String scheduleName){
+    public void run(@PathVariable(name = "scheduleName") String scheduleName){
         scheduleItService.runSchedule(scheduleName);
     }
 }
