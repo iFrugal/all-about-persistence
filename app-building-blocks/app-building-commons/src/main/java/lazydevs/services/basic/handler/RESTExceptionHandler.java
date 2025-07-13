@@ -48,7 +48,7 @@ public class RESTExceptionHandler {
         return new ResponseEntity<>( errorDetails, httpStatus);
     }
 
-    protected String stackTraceToString(Throwable t){
+    public static String stackTraceToString(Throwable t){
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         t.printStackTrace(pw);

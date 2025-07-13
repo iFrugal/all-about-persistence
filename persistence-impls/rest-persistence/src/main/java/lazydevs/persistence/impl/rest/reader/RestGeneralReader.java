@@ -19,7 +19,9 @@ import lazydevs.persistence.util.ConditionEvaluator;
 import lazydevs.persistence.util.Conditional;
 import lazydevs.persistence.util.ParseUtils;
 import lazydevs.services.basic.exception.RESTException;
+import lazydevs.services.basic.exception.ServerException;
 import lazydevs.services.basic.filter.RequestContext;
+import lazydevs.services.basic.handler.RESTExceptionHandler;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -132,7 +134,12 @@ public class RestGeneralReader implements GeneralReader<RestGeneralReader.RestIn
             if (restOutput.getStatusCode() != HttpStatus.SC_OK) {
                 throw new IllegalArgumentException(format(ERROR_MSG, restOutput.getStatusCode(), restOutput.getStatusDesc(), restOutput.getPayloadAsString()));
             }
-        }finally {
+        }catch (Exception e){
+            log.error("Some exception ocuurred", e);
+            RequestContext.current().put("error", RESTExceptionHandler.stackTraceToString(e));
+            throw new ServerException("", e);
+        }
+        finally {
             if(restInstruction.audit) {
                 auditor.audit();
             }
