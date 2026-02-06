@@ -1,0 +1,205 @@
+# =============================================================================
+# Read-Easy Sample Application Configuration
+# =============================================================================
+#
+# Copy this file to your application's src/main/resources/application.yml
+# and customize according to your needs.
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# SPRING DATASOURCE CONFIGURATION
+# -----------------------------------------------------------------------------
+# Required for JDBC-based queries. Configure your database connection here.
+#
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  # For MongoDB (if using MongoDB queries)
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/mydb
+
+# -----------------------------------------------------------------------------
+# READ-EASY CONFIGURATION
+# -----------------------------------------------------------------------------
+#
+readeasy:
+
+  # ---------------------------------------------------------------------------
+  # OPTION 1: Single Default Reader
+  # ---------------------------------------------------------------------------
+  # Use this when you only have one database/data source
+  #
+  # generalReaderInit:
+  #   fqcn: lazydevs.persistence.impl.jdbc.JdbcGeneralReader
+  #   args:
+  #     - beanRef:simpleJdbcTemplate
+
+  # ---------------------------------------------------------------------------
+  # OPTION 2: Multiple Named Readers
+  # ---------------------------------------------------------------------------
+  # Use this when you have multiple data sources (e.g., SQL + MongoDB + REST)
+  #
+  generalReaders:
+    # Default JDBC reader for SQL database
+    default:
+      fqcn: lazydevs.persistence.impl.jdbc.JdbcGeneralReader
+      args:
+        # Reference to a Spring bean by name
+        - beanRef:simpleJdbcTemplate
+
+    # MongoDB reader
+    mongodb:
+      fqcn: lazydevs.persistence.impl.mongodb.MongoGeneralReader
+      args:
+        - beanRef:mongoTemplate
+
+    # REST API reader for external services
+    # restApi:
+    #   fqcn: lazydevs.persistence.impl.rest.RestGeneralReader
+    #   args:
+    #     - beanRef:restTemplate
+
+  # ---------------------------------------------------------------------------
+  # QUERY FILES
+  # ---------------------------------------------------------------------------
+  # Map namespace -> list of YAML file paths containing query definitions
+  # Queries are accessed as: namespace.queryName (e.g., users.byId)
+  #
+  queryFiles:
+    # User-related queries
+    users:
+      - classpath:queries/users.yaml
+      # You can have multiple files per namespace
+      # - classpath:queries/users-reports.yaml
+
+    # Product catalog queries
+    products:
+      - classpath:queries/products.yaml
+
+    # Order management queries
+    orders:
+      - classpath:queries/orders.yaml
+
+  # ---------------------------------------------------------------------------
+  # REQUEST CONTEXT SUPPLIER (Optional)
+  # ---------------------------------------------------------------------------
+  # Inject request-scoped data (user ID, tenant ID, etc.) into all queries
+  # The supplier must implement java.util.function.Supplier<?>
+  #
+  # Example implementation:
+  #   @Component
+  #   public class RequestContextSupplier implements Supplier<Map<String, Object>> {
+  #       @Override
+  #       public Map<String, Object> get() {
+  #           Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+  #           return Map.of(
+  #               "userId", auth.getName(),
+  #               "roles", auth.getAuthorities().stream().map(a -> a.getAuthority()).toList()
+  #           );
+  #       }
+  #   }
+  #
+  # requestContextSupplierInit:
+  #   fqcn: com.yourcompany.RequestContextSupplier
+
+  # ---------------------------------------------------------------------------
+  # GLOBAL CONTEXT SUPPLIER (Optional)
+  # ---------------------------------------------------------------------------
+  # Inject application-wide data available to all queries
+  # Useful for environment-specific values, feature flags, etc.
+  #
+  # globalContextSupplierInit:
+  #   fqcn: com.yourcompany.GlobalContextSupplier
+
+  # ---------------------------------------------------------------------------
+  # DEFAULT OPERATION INSTRUCTIONS
+  # ---------------------------------------------------------------------------
+  # Configure default behavior for all queries. Individual queries can override.
+  #
+  operationInstruction:
+    # Configuration for /read/one endpoint
+    ONE:
+      # HTTP status code when no record is found
+      # Default: 404 (NOT_FOUND)
+      # Set to 200 to return null instead of 404
+      statusCodeWhenNoRecordsFound: 404
+
+    # Configuration for /read/export endpoint
+    EXPORT:
+      # Default filename template (FreeMarker syntax)
+      exportFileNameTemplate: "export-${.now?string('yyyyMMdd-HHmmss')}.csv"
+
+      # Default export template (if not specified in query)
+      # exportTemplate: |
+      #   <#list list as row>${row?values?join(",")}</#list>
+
+      # Number of records to fetch per batch (for memory efficiency)
+      readBatchSize: 1000
+
+      # Enable count validation before export
+      countCheckRequired: false
+
+      # Maximum records allowed for export (requires countCheckRequired: true)
+      maxCountToExport: 100000
+
+      # Reject request if count exceeds max (vs. just export up to max)
+      rejectRequestIfCountGreaterThanMaxCountToExport: false
+
+  # ---------------------------------------------------------------------------
+  # ADMIN ENDPOINTS (Optional)
+  # ---------------------------------------------------------------------------
+  # Enable the /read/register endpoint for dynamic query registration
+  # WARNING: Only enable in development or with proper security!
+  #
+  admin:
+    enabled: false
+
+  # ---------------------------------------------------------------------------
+  # BANNER (Optional)
+  # ---------------------------------------------------------------------------
+  # Custom banner displayed on startup
+  #
+  banner:
+    path: classpath:read-easy-banner.txt
+
+# -----------------------------------------------------------------------------
+# LOGGING CONFIGURATION
+# -----------------------------------------------------------------------------
+# Enable debug logging for troubleshooting
+#
+logging:
+  level:
+    lazydevs.readeasy: INFO
+    # Set to DEBUG to see query details
+    # lazydevs.readeasy: DEBUG
+    # lazydevs.persistence: DEBUG
+
+# -----------------------------------------------------------------------------
+# SERVER CONFIGURATION
+# -----------------------------------------------------------------------------
+#
+server:
+  port: 8080
+
+# -----------------------------------------------------------------------------
+# ADDITIONAL SPRING BOOT CONFIGURATIONS
+# -----------------------------------------------------------------------------
+
+# Enable actuator endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+# Jackson configuration for JSON serialization
+spring.jackson:
+  serialization:
+    write-dates-as-timestamps: false
+  default-property-inclusion: non_null

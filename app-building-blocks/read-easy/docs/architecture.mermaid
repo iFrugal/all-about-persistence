@@ -1,0 +1,66 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2E86AB', 'primaryTextColor': '#fff', 'primaryBorderColor': '#1A5276', 'lineColor': '#5D6D7E', 'secondaryColor': '#D5E8F0', 'tertiaryColor': '#fff'}}}%%
+
+flowchart TB
+    subgraph client["REST Client"]
+        webapp["Web App"]
+        mobile["Mobile App"]
+        api["API Consumer"]
+    end
+
+    subgraph spring["Spring Boot Application"]
+        subgraph controller["ConfiguredReadController"]
+            one["/read/one"]
+            list["/read/list"]
+            page["/read/page"]
+            count["/read/count"]
+            export["/read/export"]
+        end
+
+        subgraph config["Configuration Layer"]
+            reconfig["ReadEasyConfig"]
+            validator["ParamValidator"]
+            template["TemplateEngine<br/>(FreeMarker)"]
+        end
+
+        subgraph context["Context Suppliers"]
+            reqctx["Request Context<br/>(User, Tenant)"]
+            globalctx["Global Context<br/>(Env, Flags)"]
+        end
+
+        interface["GeneralReader Interface"]
+
+        subgraph readers["Reader Implementations"]
+            jdbc["JdbcGeneralReader"]
+            mongo["MongoGeneralReader"]
+            rest["RestGeneralReader"]
+            file["FileGeneralReader"]
+        end
+    end
+
+    subgraph datasources["Data Sources"]
+        sql[("SQL Database<br/>PostgreSQL, MySQL")]
+        mongodb[("MongoDB<br/>Cluster")]
+        restapi["External<br/>REST API"]
+        files["Files<br/>CSV, Excel, JSON"]
+    end
+
+    client --> controller
+    controller --> config
+    controller --> context
+    config --> interface
+    interface --> readers
+
+    jdbc --> sql
+    mongo --> mongodb
+    rest --> restapi
+    file --> files
+
+    classDef controllerStyle fill:#2E86AB,stroke:#1A5276,color:#fff
+    classDef configStyle fill:#D5E8F0,stroke:#5D6D7E,color:#1A5276
+    classDef readerStyle fill:#A9CCE3,stroke:#5D6D7E,color:#1A5276
+    classDef dataStyle fill:#F4F6F7,stroke:#5D6D7E,color:#1A5276
+
+    class one,list,page,count,export controllerStyle
+    class reconfig,validator,template,reqctx,globalctx configStyle
+    class jdbc,mongo,rest,file readerStyle
+    class sql,mongodb,restapi,files dataStyle

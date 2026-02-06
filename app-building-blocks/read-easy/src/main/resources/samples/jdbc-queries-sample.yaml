@@ -1,0 +1,289 @@
+# =============================================================================
+# Read-Easy Sample Query Configuration - JDBC/SQL Database
+# =============================================================================
+#
+# This file demonstrates how to configure queries for SQL databases using
+# the JdbcGeneralReader. Copy this file as a starting point for your own
+# query definitions.
+#
+# File location: Place in src/main/resources/queries/ and reference in
+#                application.yml under readeasy.queryFiles
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DYNAMIC BEANS SECTION
+# -----------------------------------------------------------------------------
+# Define JavaScript functions, custom transformers, or other beans that can
+# be used within your queries. Leave empty ({}) if not needed.
+#
+dynaBeans:
+  # Example: Define a JavaScript function for caching
+  # cacheScript:
+  #   type: SCRIPT
+  #   script: |
+  #     function getFromCache(key) {
+  #       return CacheManager.get(key);
+  #     }
+  {}
+
+# -----------------------------------------------------------------------------
+# QUERIES SECTION
+# -----------------------------------------------------------------------------
+# Each query is identified by a unique name (e.g., "byId", "search", "active")
+# The full query ID will be: <namespace>.<queryName>
+# For example, if this file is registered under namespace "users",
+# the query ID would be "users.byId"
+#
+queries:
+
+  # ===========================================================================
+  # EXAMPLE 1: Simple Query - Find by ID
+  # ===========================================================================
+  # Demonstrates: Basic parameterized query with required parameter
+  #
+  byId:
+    # Which reader to use (must match a key in readeasy.generalReaders)
+    # Default is "default" if not specified
+    readerId: default
+
+    # Format of the 'raw' query (JSON, YAML, or XML)
+    # Default is JSON
+    rawFormat: JSON
+
+    # The query definition using FreeMarker template syntax
+    # For JDBC, this should be a JdbcOperation JSON object
+    raw: |
+      {
+        "nativeSQL": "SELECT id, username, email, status, created_at FROM users WHERE id = :id",
+        "params": [
+          {
+            "name": "id",
+            "value": "${params.id}"
+          }
+        ]
+      }
+
+    # Parameter definitions - used for validation before query execution
+    params:
+      id:
+        # Is this parameter required?
+        required: true
+        # Data type (STRING, INTEGER, LONG, DOUBLE, BOOLEAN, DATE)
+        type: INTEGER
+        # Optional: regex pattern for validation
+        # pattern: "^[0-9]+$"
+        # Optional: default value if not provided
+        # defaultValue: 1
+
+  # ===========================================================================
+  # EXAMPLE 2: Query with Optional Parameters (Dynamic WHERE clause)
+  # ===========================================================================
+  # Demonstrates: FreeMarker conditionals for building dynamic SQL
+  #
+  search:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT id, username, email, status, created_at FROM users WHERE 1=1 <#if params.username??> AND username LIKE :username</#if> <#if params.email??> AND email = :email</#if> <#if params.status??> AND status = :status</#if> ORDER BY ${params.orderBy!'created_at'} ${params.orderDir!'DESC'}",
+        "params": [
+          <#assign first = true>
+          <#if params.username??>
+            <#if !first>,</#if>{"name": "username", "value": "%${params.username}%"}
+            <#assign first = false>
+          </#if>
+          <#if params.email??>
+            <#if !first>,</#if>{"name": "email", "value": "${params.email}"}
+            <#assign first = false>
+          </#if>
+          <#if params.status??>
+            <#if !first>,</#if>{"name": "status", "value": "${params.status}"}
+          </#if>
+        ]
+      }
+
+    # All parameters are optional for this search query
+    params:
+      username:
+        required: false
+        type: STRING
+      email:
+        required: false
+        type: STRING
+      status:
+        required: false
+        type: STRING
+      orderBy:
+        required: false
+        type: STRING
+        defaultValue: "created_at"
+      orderDir:
+        required: false
+        type: STRING
+        defaultValue: "DESC"
+
+  # ===========================================================================
+  # EXAMPLE 3: Query with Result Transformation
+  # ===========================================================================
+  # Demonstrates: Transforming database columns to a different output format
+  #
+  withFullName:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT id, first_name, last_name, email, phone, status FROM users WHERE status = 'ACTIVE'"
+      }
+
+    # Row transformer applies to each row of the result
+    # Use FreeMarker syntax to reshape the data
+    rowTransformer:
+      # Template to transform each row
+      template: |
+        {
+          "id": ${id},
+          "fullName": "${first_name} ${last_name}",
+          "email": "${email}",
+          "phone": "${phone!'N/A'}",
+          "initials": "${first_name[0]}${last_name[0]}",
+          "isActive": true
+        }
+      # Whether to merge transformed fields with original row (default: false)
+      # mergeWithSource: true
+
+  # ===========================================================================
+  # EXAMPLE 4: Query with Custom 404 Behavior
+  # ===========================================================================
+  # Demonstrates: Custom HTTP status code when no records found
+  #
+  byEmail:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM users WHERE email = :email",
+        "params": [
+          {"name": "email", "value": "${params.email}"}
+        ]
+      }
+
+    params:
+      email:
+        required: true
+        type: STRING
+        # Validate email format
+        pattern: "^[\\w.-]+@[\\w.-]+\\.\\w+$"
+
+    # Operation-specific instructions
+    operationInstruction:
+      # Configuration for /read/one endpoint
+      ONE:
+        # Return 200 with null instead of 404 when no record found
+        statusCodeWhenNoRecordsFound: 200
+
+  # ===========================================================================
+  # EXAMPLE 5: Query with Export Configuration
+  # ===========================================================================
+  # Demonstrates: Configuring CSV export with custom template
+  #
+  forExport:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT id, username, email, status, created_at FROM users WHERE created_at >= :startDate AND created_at <= :endDate ORDER BY created_at"
+      }
+
+    params:
+      startDate:
+        required: true
+        type: STRING
+      endDate:
+        required: true
+        type: STRING
+
+    operationInstruction:
+      EXPORT:
+        # Dynamic filename with date
+        exportFileNameTemplate: "users-export-${params.startDate}-to-${params.endDate}.csv"
+
+        # CSV template with header on first batch
+        # Note: 'list' contains the current batch of records
+        exportTemplate: |
+          <#if list?is_first>ID,Username,Email,Status,Created At
+          </#if><#list list as row>${row.id},"${row.username}","${row.email}","${row.status}","${row.created_at?string('yyyy-MM-dd HH:mm:ss')}"
+          </#list>
+
+        # Number of records to read per batch (memory optimization)
+        readBatchSize: 5000
+
+        # Optional: Limit maximum export size
+        countCheckRequired: true
+        maxCountToExport: 100000
+        rejectRequestIfCountGreaterThanMaxCountToExport: true
+
+  # ===========================================================================
+  # EXAMPLE 6: Query Using Request Context
+  # ===========================================================================
+  # Demonstrates: Accessing user/tenant context injected via requestContextSupplier
+  # Requires: requestContextSupplierInit configured in application.yml
+  #
+  myRecords:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM user_records WHERE user_id = :userId AND tenant_id = :tenantId ORDER BY created_at DESC",
+        "params": [
+          {"name": "userId", "value": "${request.userId}"},
+          {"name": "tenantId", "value": "${request.tenantId}"}
+        ]
+      }
+
+    # No params required from client - values come from request context
+    params: {}
+
+  # ===========================================================================
+  # EXAMPLE 7: Query with IN Clause (Multiple Values)
+  # ===========================================================================
+  # Demonstrates: Handling array parameters for IN clauses
+  #
+  byIds:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM users WHERE id IN (<#list params.ids as id>:id${id?index}<#sep>, </#list>)",
+        "params": [
+          <#list params.ids as id>
+          {"name": "id${id?index}", "value": "${id}"}<#sep>,
+          </#list>
+        ]
+      }
+
+    params:
+      ids:
+        required: true
+        # Array type - client sends: {"ids": [1, 2, 3]}
+        type: STRING
+
+  # ===========================================================================
+  # EXAMPLE 8: Query with Caching
+  # ===========================================================================
+  # Demonstrates: Using JavaScript cache function to avoid database hits
+  # Requires: cacheScript dynaBeans defined above
+  #
+  # cachedLookup:
+  #   readerId: default
+  #   raw: |
+  #     {
+  #       "nativeSQL": "SELECT * FROM lookup_table WHERE category = :category"
+  #     }
+  #
+  #   params:
+  #     category:
+  #       required: true
+  #       type: STRING
+  #
+  #   # Cache configuration
+  #   cacheFetchInstruction:
+  #     # Name of JavaScript function to call
+  #     jsFunctionName: getFromCache
+  #     # Parameter names to pass to the function
+  #     args:
+  #       - category

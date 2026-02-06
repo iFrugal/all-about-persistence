@@ -1,0 +1,276 @@
+# =============================================================================
+# Read-Easy Sample Query Configuration - MongoDB
+# =============================================================================
+#
+# This file demonstrates how to configure queries for MongoDB using
+# the MongoGeneralReader. Copy this file as a starting point for your own
+# query definitions.
+#
+# Prerequisites:
+#   - MongoTemplate bean configured in Spring context
+#   - MongoDB persistence module included in dependencies
+#
+# =============================================================================
+
+dynaBeans: {}
+
+queries:
+
+  # ===========================================================================
+  # EXAMPLE 1: Simple Find by ID
+  # ===========================================================================
+  # MongoDB uses ObjectId for _id field by default
+  #
+  byId:
+    readerId: mongodb
+    rawFormat: JSON
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          "_id": {"$oid": "${params.id}"}
+        }
+      }
+
+    params:
+      id:
+        required: true
+        type: STRING
+
+  # ===========================================================================
+  # EXAMPLE 2: Query with Filters
+  # ===========================================================================
+  # Demonstrates: Multiple filter conditions
+  #
+  byCategory:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          "category": "${params.category}",
+          "active": true,
+          "price": {"$lte": ${params.maxPrice!999999}}
+        }
+      }
+
+    params:
+      category:
+        required: true
+        type: STRING
+      maxPrice:
+        required: false
+        type: DOUBLE
+
+  # ===========================================================================
+  # EXAMPLE 3: Text Search
+  # ===========================================================================
+  # Requires: Text index on the collection
+  # db.products.createIndex({ name: "text", description: "text" })
+  #
+  textSearch:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          "$text": {"$search": "${params.searchTerm}"}
+        }
+      }
+
+    params:
+      searchTerm:
+        required: true
+        type: STRING
+
+  # ===========================================================================
+  # EXAMPLE 4: Aggregation Pipeline
+  # ===========================================================================
+  # Demonstrates: Using MongoDB aggregation for complex queries
+  #
+  salesByCategory:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "orders",
+        "aggregationMode": true,
+        "query": [
+          {
+            "$match": {
+              "orderDate": {
+                "$gte": {"$date": "${params.startDate}"},
+                "$lte": {"$date": "${params.endDate}"}
+              }
+            }
+          },
+          {
+            "$unwind": "$items"
+          },
+          {
+            "$group": {
+              "_id": "$items.category",
+              "totalQuantity": {"$sum": "$items.quantity"},
+              "totalRevenue": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}},
+              "orderCount": {"$sum": 1}
+            }
+          },
+          {
+            "$sort": {"totalRevenue": -1}
+          }
+        ]
+      }
+
+    params:
+      startDate:
+        required: true
+        type: STRING
+      endDate:
+        required: true
+        type: STRING
+
+  # ===========================================================================
+  # EXAMPLE 5: Query with Projection (Select specific fields)
+  # ===========================================================================
+  #
+  summary:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          "active": true
+        },
+        "projection": {
+          "name": 1,
+          "price": 1,
+          "category": 1,
+          "_id": 0
+        }
+      }
+
+  # ===========================================================================
+  # EXAMPLE 6: Query with Sort
+  # ===========================================================================
+  #
+  recentlyAdded:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          "active": true
+        },
+        "sort": {
+          "createdAt": -1
+        }
+      }
+
+  # ===========================================================================
+  # EXAMPLE 7: Distinct Values
+  # ===========================================================================
+  # Get unique values for a field
+  #
+  allCategories:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "distinctField": "category",
+        "query": {
+          "active": true
+        }
+      }
+
+  # ===========================================================================
+  # EXAMPLE 8: Nested Document Query
+  # ===========================================================================
+  # Query on nested/embedded documents
+  #
+  byAddress:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "customers",
+        "query": {
+          "address.city": "${params.city}",
+          "address.country": "${params.country!'US'}"
+        }
+      }
+
+    params:
+      city:
+        required: true
+        type: STRING
+      country:
+        required: false
+        type: STRING
+        defaultValue: "US"
+
+  # ===========================================================================
+  # EXAMPLE 9: Array Query (elemMatch)
+  # ===========================================================================
+  # Query documents where array contains matching element
+  #
+  byTag:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          "tags": {"$elemMatch": {"$eq": "${params.tag}"}}
+        }
+      }
+
+    params:
+      tag:
+        required: true
+        type: STRING
+
+  # ===========================================================================
+  # EXAMPLE 10: Complex Conditional Query
+  # ===========================================================================
+  # Demonstrates: Building query dynamically with FreeMarker
+  #
+  advancedSearch:
+    readerId: mongodb
+    raw: |
+      {
+        "collectionName": "products",
+        "query": {
+          <#assign conditions = []>
+          <#if params.category??>
+            <#assign conditions = conditions + ['"category": "${params.category}"']>
+          </#if>
+          <#if params.minPrice??>
+            <#assign conditions = conditions + ['"price": {"$gte": ${params.minPrice}}']>
+          </#if>
+          <#if params.maxPrice??>
+            <#assign conditions = conditions + ['"price": {"$lte": ${params.maxPrice}}']>
+          </#if>
+          <#if params.inStock?? && params.inStock>
+            <#assign conditions = conditions + ['"inventory": {"$gt": 0}']>
+          </#if>
+          <#if conditions?size == 0>
+            "active": true
+          <#else>
+            "$and": [
+              {"active": true},
+              {${conditions?join("}, {")}}
+            ]
+          </#if>
+        }
+      }
+
+    params:
+      category:
+        required: false
+        type: STRING
+      minPrice:
+        required: false
+        type: DOUBLE
+      maxPrice:
+        required: false
+        type: DOUBLE
+      inStock:
+        required: false
+        type: BOOLEAN
