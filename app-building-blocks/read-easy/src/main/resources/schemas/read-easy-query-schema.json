@@ -1,0 +1,225 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/iFrugal/all-about-persistence/read-easy-query-schema.json",
+  "title": "Read-Easy Query Configuration",
+  "description": "Schema for Read-Easy query YAML configuration files",
+  "type": "object",
+  "properties": {
+    "dynaBeans": {
+      "type": "object",
+      "description": "Dynamic bean definitions (JavaScript functions, custom transformers, etc.)",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["SCRIPT", "BEAN", "CLASS"],
+            "description": "Type of dynamic bean"
+          },
+          "script": {
+            "type": "string",
+            "description": "JavaScript code for SCRIPT type beans"
+          },
+          "fqcn": {
+            "type": "string",
+            "description": "Fully qualified class name for CLASS type beans"
+          },
+          "args": {
+            "type": "array",
+            "description": "Constructor arguments",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "queries": {
+      "type": "object",
+      "description": "Map of query name to query configuration",
+      "additionalProperties": {
+        "$ref": "#/definitions/Query"
+      }
+    }
+  },
+  "required": ["queries"],
+  "definitions": {
+    "Query": {
+      "type": "object",
+      "description": "Configuration for a single query",
+      "properties": {
+        "readerId": {
+          "type": "string",
+          "description": "ID of the GeneralReader to use. Must match a key in readeasy.generalReaders.",
+          "default": "default",
+          "examples": ["default", "mongodb", "restApi"]
+        },
+        "rawFormat": {
+          "type": "string",
+          "enum": ["JSON", "YAML", "XML"],
+          "description": "Format of the raw query string",
+          "default": "JSON"
+        },
+        "raw": {
+          "type": "string",
+          "description": "The query template using FreeMarker syntax. Available variables: params, request, global, sort",
+          "examples": [
+            "{\n  \"nativeSQL\": \"SELECT * FROM users WHERE id = :id\",\n  \"params\": [{\"name\": \"id\", \"value\": \"${params.id}\"}]\n}"
+          ]
+        },
+        "params": {
+          "type": "object",
+          "description": "Parameter definitions for validation",
+          "additionalProperties": {
+            "$ref": "#/definitions/Param"
+          }
+        },
+        "cacheFetchInstruction": {
+          "$ref": "#/definitions/CacheFetchInstruction"
+        },
+        "rowTransformer": {
+          "$ref": "#/definitions/RowTransformer"
+        },
+        "operationInstruction": {
+          "type": "object",
+          "description": "Per-operation configuration overrides",
+          "properties": {
+            "ONE": {
+              "$ref": "#/definitions/OneInstruction"
+            },
+            "LIST": {
+              "type": "object",
+              "description": "Configuration for /read/list endpoint"
+            },
+            "PAGE": {
+              "type": "object",
+              "description": "Configuration for /read/page endpoint"
+            },
+            "COUNT": {
+              "type": "object",
+              "description": "Configuration for /read/count endpoint"
+            },
+            "EXPORT": {
+              "$ref": "#/definitions/ExportInstruction"
+            }
+          }
+        }
+      },
+      "required": ["raw"]
+    },
+    "Param": {
+      "type": "object",
+      "description": "Parameter definition for validation",
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "description": "Whether the parameter is mandatory",
+          "default": false
+        },
+        "type": {
+          "type": "string",
+          "enum": ["STRING", "INTEGER", "LONG", "DOUBLE", "BOOLEAN", "DATE"],
+          "description": "Data type for the parameter",
+          "default": "STRING"
+        },
+        "defaultValue": {
+          "description": "Default value if parameter is not provided"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern for validation",
+          "examples": ["^[a-zA-Z]+$", "^\\d{4}-\\d{2}-\\d{2}$"]
+        }
+      }
+    },
+    "CacheFetchInstruction": {
+      "type": "object",
+      "description": "Configuration for JavaScript-based caching",
+      "properties": {
+        "jsFunctionName": {
+          "type": "string",
+          "description": "Name of the JavaScript function to call for cache lookup"
+        },
+        "args": {
+          "type": "array",
+          "description": "Parameter names to pass to the cache function",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["category", "status"]]
+        }
+      },
+      "required": ["jsFunctionName"]
+    },
+    "RowTransformer": {
+      "type": "object",
+      "description": "Configuration for transforming query results",
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "FreeMarker template for row transformation",
+          "examples": ["{\"fullName\": \"${first_name} ${last_name}\", \"email\": \"${email}\"}"]
+        },
+        "mergeWithSource": {
+          "type": "boolean",
+          "description": "Whether to merge transformed fields with original row",
+          "default": false
+        },
+        "jsFunctionName": {
+          "type": "string",
+          "description": "JavaScript function for transformation (alternative to template)"
+        }
+      }
+    },
+    "OneInstruction": {
+      "type": "object",
+      "description": "Configuration for /read/one endpoint",
+      "properties": {
+        "statusCodeWhenNoRecordsFound": {
+          "type": "integer",
+          "description": "HTTP status code when no record is found",
+          "default": 404,
+          "examples": [200, 404]
+        }
+      }
+    },
+    "ExportInstruction": {
+      "type": "object",
+      "description": "Configuration for /read/export endpoint",
+      "properties": {
+        "exportFileNameTemplate": {
+          "type": "string",
+          "description": "FreeMarker template for export filename",
+          "default": "export.csv",
+          "examples": ["users-export-${.now?string('yyyyMMdd')}.csv"]
+        },
+        "exportTemplate": {
+          "type": "string",
+          "description": "FreeMarker template for CSV content. Use 'list' variable for current batch.",
+          "examples": ["<#list list as row>${row.id},\"${row.name}\"\n</#list>"]
+        },
+        "readBatchSize": {
+          "type": "integer",
+          "description": "Number of records to read per batch",
+          "default": 1000,
+          "minimum": 1
+        },
+        "countCheckRequired": {
+          "type": "boolean",
+          "description": "Whether to check count before export",
+          "default": false
+        },
+        "maxCountToExport": {
+          "type": "integer",
+          "description": "Maximum records allowed for export",
+          "examples": [100000]
+        },
+        "rejectRequestIfCountGreaterThanMaxCountToExport": {
+          "type": "boolean",
+          "description": "Reject request if count exceeds max (vs. export up to max)",
+          "default": false
+        }
+      }
+    }
+  }
+}

@@ -165,6 +165,79 @@ public class ReadEasyConfig{
      */
     private Map<Operation, Map<String, Object>> operationInstruction = new HashMap<>();
 
+    /**
+     * Validation configuration for startup-time query validation.
+     */
+    private ValidationConfig validation = new ValidationConfig();
+
+    /**
+     * Development tools configuration for hot-reload and debugging.
+     */
+    private DevtoolsConfig devtools = new DevtoolsConfig();
+
+    /**
+     * Configuration for startup-time query validation.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * readeasy:
+     *   validation:
+     *     enabled: true           # Enable validation (default: true)
+     *     failOnError: true       # Fail startup on errors (default: true)
+     *     validateTemplates: true # Validate FreeMarker syntax (default: true)
+     * }</pre>
+     */
+    @Getter @Setter @ToString
+    public static class ValidationConfig {
+        /**
+         * Enable startup-time validation of query YAML files.
+         */
+        private boolean enabled = true;
+
+        /**
+         * Fail application startup if validation errors are found.
+         * If false, errors are logged as warnings.
+         */
+        private boolean failOnError = true;
+
+        /**
+         * Validate FreeMarker template syntax in queries.
+         */
+        private boolean validateTemplates = true;
+    }
+
+    /**
+     * Configuration for development tools including hot-reload.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * readeasy:
+     *   devtools:
+     *     enabled: true           # Enable dev mode (default: false)
+     *     watchIntervalMs: 2000   # File check interval (default: 2000)
+     *     validateOnReload: true  # Validate before reload (default: true)
+     * }</pre>
+     *
+     * <p><b>Note:</b> Only enable in development environments.</p>
+     */
+    @Getter @Setter @ToString
+    public static class DevtoolsConfig {
+        /**
+         * Enable development mode with hot-reload support.
+         * Only enable in development environments.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Interval in milliseconds to check for file changes.
+         */
+        private long watchIntervalMs = 2000;
+
+        /**
+         * Validate queries before reloading.
+         */
+        private boolean validateOnReload = true;
+    }
 
     /**
      * Container class for query YAML file structure.
