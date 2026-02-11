@@ -1,0 +1,28 @@
+# Configuration for standalone test application
+server:
+  port: 9999
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+    banner-mode: off
+
+readeasy:
+  validation:
+    enabled: false
+  devtools:
+    enabled: false
+  queryFiles:
+    users:
+      - classpath:queries/valid/users-queries.yaml
+    orders:
+      - classpath:queries/valid/orders-queries.yaml
+    mongo-users:
+      - classpath:queries/valid/mongodb-users-queries.yaml
+    mongo-orders:
+      - classpath:queries/valid/mongodb-orders-queries.yaml
+
+logging:
+  level:
+    root: INFO
+    lazydevs.readeasy: DEBUG

@@ -1,0 +1,62 @@
+# Test configuration for Read-Easy integration tests
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+# H2 in-memory database for JDBC testing
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: false
+
+  # JPA/Hibernate settings
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+# Read-Easy configuration for tests
+readeasy:
+  # Validation settings
+  validation:
+    enabled: true
+    failOnError: false  # Log warnings but don't fail in tests
+    validateTemplates: true
+
+  # Dev tools disabled for most tests
+  devtools:
+    enabled: false
+    watchIntervalMs: 1000
+    validateOnReload: true
+
+  # Query files for testing - includes both JDBC and MongoDB queries
+  queryFiles:
+    # JDBC queries (using 'default' reader)
+    users:
+      - classpath:queries/valid/users-queries.yaml
+    orders:
+      - classpath:queries/valid/orders-queries.yaml
+    # MongoDB queries (using 'mongodb' reader)
+    mongo-users:
+      - classpath:queries/valid/mongodb-users-queries.yaml
+    mongo-orders:
+      - classpath:queries/valid/mongodb-orders-queries.yaml
+
+  # Default operation instructions
+  operationInstruction:
+    ONE:
+      statusCodeWhenNoRecordsFound: 404
+    EXPORT:
+      readBatchSize: 100
+      maxCountToExport: 10000
+
+logging:
+  level:
+    lazydevs.readeasy: DEBUG
+    lazdevs.peristence.mongo: DEBUG
+    lazydevs.persistence.jdbc: DEBUG

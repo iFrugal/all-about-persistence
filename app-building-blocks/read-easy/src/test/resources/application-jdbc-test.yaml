@@ -1,0 +1,31 @@
+# JDBC Test Profile Configuration
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+
+readeasy:
+  validation:
+    enabled: false
+  devtools:
+    enabled: false
+  queryFiles:
+    users:
+      - classpath:queries/valid/users-queries.yaml
+    orders:
+      - classpath:queries/valid/orders-queries.yaml
+
+logging:
+  level:
+    lazydevs.readeasy: DEBUG

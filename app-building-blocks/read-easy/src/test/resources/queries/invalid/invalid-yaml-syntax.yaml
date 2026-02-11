@@ -1,0 +1,13 @@
+# Invalid YAML file - syntax error
+queries:
+  badQuery:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM users"
+      }
+    params:
+      id:
+        required: true
+    # Invalid YAML - missing colon
+    extraField  this is not valid yaml

@@ -139,23 +139,28 @@ public class ConfiguredReadController {
     }
 
     private Map<String, GeneralReader> getGeneralReader(Map<String, GeneralReader> readEasyGeneralReaderMap, ReadEasyConfig readEasyConfig, ApplicationContext applicationContext){
+        // If bean is provided, use it directly
+        if(null != readEasyGeneralReaderMap && !readEasyGeneralReaderMap.isEmpty()){
+            return readEasyGeneralReaderMap;
+        }
+
+        // Bean not provided - build from config
         Map<String, GeneralReader> finalReadEasyGeneralReaderMap = new HashMap<>();
 
-        if(null == readEasyGeneralReaderMap){//bean not provided
-            if(null == readEasyConfig.getGeneralReaders()){
-                readEasyConfig.setGeneralReaders(new HashMap<>());
-            }
-            if(null != readEasyConfig.getGeneralReaderInit()){
-                readEasyConfig.getGeneralReaders().put("default", readEasyConfig.getGeneralReaderInit());
-            }
-            if(readEasyConfig.getGeneralReaders().isEmpty()){
-                throw new IllegalStateException("readEasyGeneralReaderMap is not provided either as @Autowired bean, nor it is provided in property 'readeasy.generalReaders'");
-            }
-            readEasyConfig.getGeneralReaders().forEach((readerId, readerInit) -> {
-                GeneralReader<?,?> generalReader = getInterfaceReference(readerInit, GeneralReader.class, applicationContext::getBean, environment::getProperty);
-                finalReadEasyGeneralReaderMap.put(readerId, generalReader);
-            });
+        if(null == readEasyConfig.getGeneralReaders()){
+            readEasyConfig.setGeneralReaders(new HashMap<>());
         }
+        if(null != readEasyConfig.getGeneralReaderInit()){
+            readEasyConfig.getGeneralReaders().put("default", readEasyConfig.getGeneralReaderInit());
+        }
+        if(readEasyConfig.getGeneralReaders().isEmpty()){
+            throw new IllegalStateException("readEasyGeneralReaderMap is not provided either as @Autowired bean, nor it is provided in property 'readeasy.generalReaders'");
+        }
+        readEasyConfig.getGeneralReaders().forEach((readerId, readerInit) -> {
+            GeneralReader<?,?> generalReader = getInterfaceReference(readerInit, GeneralReader.class, applicationContext::getBean, environment::getProperty);
+            finalReadEasyGeneralReaderMap.put(readerId, generalReader);
+        });
+
         return finalReadEasyGeneralReaderMap;
     }
 

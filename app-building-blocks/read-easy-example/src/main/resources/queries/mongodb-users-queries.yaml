@@ -1,0 +1,63 @@
+# =============================================================================
+# MongoDB User Queries
+# =============================================================================
+# These queries use the 'mongodb' reader (MongoDB style)
+#
+# Query ID format: namespace.queryName
+# For this file (under 'mongo-users' namespace): mongo-users.findAll, etc.
+# =============================================================================
+
+queries:
+
+  # ---------------------------------------------------------------------------
+  # findAll - Retrieve all users from MongoDB
+  # ---------------------------------------------------------------------------
+  # Usage: POST /read/list?queryId=mongo-users.findAll
+  findAll:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "users",
+        "operation": "FIND",
+        "filter": {}
+      }
+
+  # ---------------------------------------------------------------------------
+  # findById - Find user by MongoDB _id
+  # ---------------------------------------------------------------------------
+  # Usage: POST /read/one?queryId=mongo-users.findById
+  #        Body: {"id": "507f1f77bcf86cd799439011"}
+  findById:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "users",
+        "operation": "FIND",
+        "filter": {"_id": "${params.id}"}
+      }
+    params:
+      id:
+        typeFqcn: "java.lang.String"
+        required: true
+
+  # ---------------------------------------------------------------------------
+  # findByStatus - Find users by status
+  # ---------------------------------------------------------------------------
+  # Usage: POST /read/list?queryId=mongo-users.findByStatus
+  #        Body: {"status": "ACTIVE"}
+  findByStatus:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "users",
+        "operation": "FIND",
+        "filter": {"status": "${params.status}"},
+        "sort": {"name": 1}
+      }
+    params:
+      status:
+        typeFqcn: "java.lang.String"
+        required: true

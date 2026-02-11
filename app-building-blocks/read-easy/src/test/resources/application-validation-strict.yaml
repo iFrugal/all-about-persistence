@@ -1,0 +1,12 @@
+# Test configuration for strict validation tests
+# This profile enables failOnError to test validation failure scenarios
+readeasy:
+  validation:
+    enabled: true
+    failOnError: true  # Fail startup on validation errors
+    validateTemplates: true
+
+  # Include invalid query files to test validation failures
+  queryFiles:
+    invalid:
+      - classpath:queries/invalid/missing-raw.yaml

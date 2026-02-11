@@ -1,0 +1,44 @@
+# Read-Easy Example Application Configuration
+server:
+  port: 8085
+
+spring:
+  application:
+    name: read-easy-example
+  main:
+    allow-bean-definition-overriding: true
+
+# Read-Easy Configuration
+readeasy:
+  # Query file locations (namespace -> list of files)
+  queryFiles:
+    users:
+      - classpath:queries/users-queries.yaml
+    mongo-users:
+      - classpath:queries/mongodb-users-queries.yaml
+
+  # Validation settings
+  validation:
+    enabled: true
+    failOnError: false        # Log warnings but don't fail startup
+    validateTemplates: true   # Validate FreeMarker syntax
+
+  # Development tools (enable for hot-reload in dev)
+  devtools:
+    enabled: false
+    watchIntervalMs: 2000
+    validateOnReload: true
+
+  # Default operation settings
+  operationInstruction:
+    ONE:
+      statusCodeWhenNoRecordsFound: 404
+    EXPORT:
+      readBatchSize: 1000
+      maxCountToExport: 100000
+
+logging:
+  level:
+    root: INFO
+    lazydevs.readeasy: DEBUG
+    com.example.readeasy: DEBUG

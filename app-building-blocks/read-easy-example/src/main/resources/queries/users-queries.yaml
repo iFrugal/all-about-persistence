@@ -1,0 +1,60 @@
+# =============================================================================
+# JDBC User Queries
+# =============================================================================
+# These queries use the 'default' reader (JDBC/SQL style)
+#
+# Query ID format: namespace.queryName
+# For this file (under 'users' namespace): users.findAll, users.findById, etc.
+# =============================================================================
+
+queries:
+
+  # ---------------------------------------------------------------------------
+  # findAll - Retrieve all users
+  # ---------------------------------------------------------------------------
+  # Usage: POST /read/list?queryId=users.findAll
+  #        POST /read/page?queryId=users.findAll&pageNum=1&pageSize=10
+  #        POST /read/count?queryId=users.findAll
+  findAll:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT id, name, email, status, created_at FROM users ORDER BY id"
+      }
+
+  # ---------------------------------------------------------------------------
+  # findById - Find user by ID (required parameter)
+  # ---------------------------------------------------------------------------
+  # Usage: POST /read/one?queryId=users.findById
+  #        Body: {"id": 1}
+  findById:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT id, name, email, status, created_at FROM users WHERE id = :id",
+        "params": [{"name": "id", "value": "${params.id}"}]
+      }
+    params:
+      id:
+        typeFqcn: "java.lang.Integer"
+        required: true
+
+  # ---------------------------------------------------------------------------
+  # findByStatus - Find users by status (required parameter)
+  # ---------------------------------------------------------------------------
+  # Usage: POST /read/list?queryId=users.findByStatus
+  #        Body: {"status": "ACTIVE"}
+  findByStatus:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT id, name, email, status FROM users WHERE status = :status ORDER BY name",
+        "params": [{"name": "status", "value": "${params.status}"}]
+      }
+    params:
+      status:
+        typeFqcn: "java.lang.String"
+        required: true

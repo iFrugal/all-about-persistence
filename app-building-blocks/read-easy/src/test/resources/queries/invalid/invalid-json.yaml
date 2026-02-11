@@ -1,0 +1,16 @@
+# Invalid query file - invalid JSON in raw field
+queries:
+  badJson:
+    readerId: default
+    rawFormat: JSON
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM users",
+        "params": [
+          {"name": "id", "value": 123}
+          {"name": "name", "value": "test"}
+        ]
+      }
+    params:
+      id:
+        required: true

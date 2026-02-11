@@ -3,7 +3,7 @@
     <parent>
         <artifactId>app-building-blocks</artifactId>
         <groupId>com.github.ifrugal</groupId>
-        <version>1.0.47-SNAPSHOT</version>
+        <version>1.0.48-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -25,5 +25,73 @@
             <artifactId>dyna-beans-injector</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+
+        <!-- Test Dependencies -->
+        <!-- H2 In-Memory Database for JDBC Tests -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Embedded MongoDB for MongoDB Tests -->
+        <dependency>
+            <groupId>de.flapdoodle.embed</groupId>
+            <artifactId>de.flapdoodle.embed.mongo</artifactId>
+            <version>4.9.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>de.flapdoodle.embed</groupId>
+            <artifactId>de.flapdoodle.embed.mongo.spring30x</artifactId>
+            <version>4.9.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Data MongoDB for tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Data JPA for JDBC tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JDBC Persistence Implementation for tests -->
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>simple-jdbc-persistence</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MongoDB Persistence Implementation for tests -->
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>mongodb-persistence</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- For running standalone test application -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>lazydevs.readeasy.example.standalone.StandaloneTestApplication</mainClass>
+                    <classpathScope>test</classpathScope>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

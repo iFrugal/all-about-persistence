@@ -1,0 +1,17 @@
+# Invalid query file - invalid FreeMarker syntax
+queries:
+  badTemplate:
+    readerId: default
+    rawFormat: JSON
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM users WHERE 1=1
+          <#if params.name??>AND name = :name</#if>
+          <#-- Missing closing tag for this if statement
+          <#if params.status??>AND status = :status"
+      }
+    params:
+      name:
+        required: false
+      status:
+        required: false
