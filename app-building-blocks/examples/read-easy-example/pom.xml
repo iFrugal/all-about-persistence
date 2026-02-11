@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>read-easy-example</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Read-Easy Example Application</name>
+    <description>Example project demonstrating how to use the Read-Easy framework</description>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+
+    <properties>
+        <java.version>21</java.version>
+        <app-building-blocks.version>1.0.48-SNAPSHOT</app-building-blocks.version>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Boot Web Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Read-Easy Framework -->
+        <dependency>
+            <groupId>com.github.ifrugal</groupId>
+            <artifactId>read-easy</artifactId>
+            <version>${app-building-blocks.version}</version>
+        </dependency>
+
+        <!-- App Building Commons (for RESTExceptionHandler) -->
+        <dependency>
+            <groupId>com.github.ifrugal</groupId>
+            <artifactId>app-building-commons</artifactId>
+            <version>${app-building-blocks.version}</version>
+        </dependency>
+
+        <!-- DynaBeans Injector -->
+        <dependency>
+            <groupId>com.github.ifrugal</groupId>
+            <artifactId>dyna-beans-injector</artifactId>
+            <version>${app-building-blocks.version}</version>
+        </dependency>
+
+        <!-- Lombok (optional, for cleaner code) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

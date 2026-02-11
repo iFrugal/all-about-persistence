@@ -1,0 +1,15 @@
+# Test configuration for devtools/hot-reload tests
+readeasy:
+  validation:
+    enabled: true
+    failOnError: false
+    validateTemplates: true
+
+  devtools:
+    enabled: true
+    watchIntervalMs: 500  # Faster for tests
+    validateOnReload: true
+
+  queryFiles:
+    users:
+      - classpath:queries/valid/users-queries.yaml

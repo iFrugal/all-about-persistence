@@ -1,0 +1,69 @@
+# Valid query file for testing - Users queries
+queries:
+  findAll:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT id, name, email, created_at FROM users ORDER BY id"
+      }
+
+  findById:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT id, name, email, created_at FROM users WHERE id = :id",
+        "params": [{"name": "id", "value": "${params.id}"}]
+      }
+    params:
+      id:
+        typeFqcn: "java.lang.Integer"
+        required: true
+
+  search:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT id, name, email FROM users WHERE 1=1
+          <#if params.name??>
+          AND name LIKE :name
+          </#if>
+          <#if params.status??>
+          AND status = :status
+          </#if>
+          ORDER BY id",
+        "params": [
+          <#if params.name??>
+          {"name": "name", "value": "%${params.name}%"}
+          </#if>
+          <#if params.status??>
+          <#if params.name??>,</#if>
+          {"name": "status", "value": "${params.status}"}
+          </#if>
+        ]
+      }
+    params:
+      name:
+        typeFqcn: "java.lang.String"
+        required: false
+      status:
+        typeFqcn: "java.lang.String"
+        required: false
+
+  findOne:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT * FROM users WHERE id = :id",
+        "params": [{"name": "id", "value": "${params.id}"}]
+      }
+    params:
+      id:
+        typeFqcn: "java.lang.Integer"
+        required: true
+    operationInstruction:
+      ONE:
+        statusCodeWhenNoRecordsFound: 200

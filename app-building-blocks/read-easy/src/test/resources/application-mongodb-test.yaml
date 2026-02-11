@@ -1,0 +1,22 @@
+# MongoDB Test Profile Configuration
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  data:
+    mongodb:
+      database: test
+
+readeasy:
+  validation:
+    enabled: false
+  devtools:
+    enabled: false
+  queryFiles:
+    mongo-users:
+      - classpath:queries/valid/mongodb-users-queries.yaml
+    mongo-orders:
+      - classpath:queries/valid/mongodb-orders-queries.yaml
+
+logging:
+  level:
+    lazydevs.readeasy: DEBUG

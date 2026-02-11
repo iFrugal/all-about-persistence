@@ -1,0 +1,8 @@
+# Invalid query file - missing 'raw' field
+queries:
+  missingRaw:
+    readerId: default
+    # raw field is missing - should cause validation error
+    params:
+      id:
+        required: true

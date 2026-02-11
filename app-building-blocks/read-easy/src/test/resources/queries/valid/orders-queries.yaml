@@ -1,0 +1,56 @@
+# Valid query file for testing - Orders queries
+queries:
+  listAll:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT o.id, o.user_id, o.total_amount, o.status, o.created_at FROM orders o ORDER BY o.created_at DESC"
+      }
+
+  findAll:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT * FROM orders ORDER BY created_at DESC"
+      }
+
+  findById:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT * FROM orders WHERE id = :id",
+        "params": [{"name": "id", "value": "${params.id}"}]
+      }
+    params:
+      id:
+        typeFqcn: "java.lang.Long"
+        required: true
+
+  findByUserId:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT * FROM orders WHERE user_id = :userId ORDER BY created_at DESC",
+        "params": [{"name": "userId", "value": "${params.userId}"}]
+      }
+    params:
+      userId:
+        typeFqcn: "java.lang.Integer"
+        required: true
+
+  findByStatus:
+    readerId: default
+    rawFormat: YAML
+    raw: |-
+      {
+        "nativeSQL": "SELECT * FROM orders WHERE status = :status ORDER BY created_at DESC",
+        "params": [{"name": "status", "value": "${params.status}"}]
+      }
+    params:
+      status:
+        typeFqcn: "java.lang.String"
+        required: true

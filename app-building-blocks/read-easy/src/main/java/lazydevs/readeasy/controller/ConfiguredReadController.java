@@ -11,6 +11,9 @@ import lazydevs.persistence.reader.Page;
 import lazydevs.readeasy.config.ReadEasyConfig;
 import lazydevs.readeasy.config.ReadEasyConfig.Query;
 import lazydevs.readeasy.config.ReadEasyConfig.QueryWithDynaBeans;
+import lazydevs.readeasy.devtools.DevModeQueryReloader;
+import lazydevs.readeasy.validation.QueryTemplateException;
+import lazydevs.readeasy.validation.QueryValidator;
 import lazydevs.services.basic.exception.RESTException;
 import lazydevs.services.basic.exception.ValidationException;
 import lazydevs.services.basic.validation.ParamValidator;
@@ -40,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -78,6 +82,8 @@ public class ConfiguredReadController {
     private Supplier<?> requestContextSupplier;
     private Supplier<?> globalContextSupplier;
     @Autowired private ParamValidator paramValidator;
+    @Autowired(required = false) private QueryValidator queryValidator;
+    @Autowired(required = false) private DevModeQueryReloader devModeQueryReloader;
     @Value("${readeasy.banner.path:classpath:read-easy-banner.txt}")
     private String bannerPath;
 
@@ -86,47 +92,84 @@ public class ConfiguredReadController {
         log.info(readInputStreamAsString(applicationContext.getResource(bannerPath).getInputStream()));
         this.readEasyGeneralReaderMap = getGeneralReader(readEasyGeneralReaderMap, readEasyConfig, applicationContext);
         queries = new HashMap<>();
+
+        // Get available reader IDs for validation
+        Set<String> availableReaderIds = readEasyGeneralReaderMap != null ?
+                readEasyGeneralReaderMap.keySet() : Collections.emptySet();
+
+        // Determine validation settings
+        boolean validationEnabled = readEasyConfig.getValidation() != null &&
+                readEasyConfig.getValidation().isEnabled();
+        boolean failOnError = readEasyConfig.getValidation() != null &&
+                readEasyConfig.getValidation().isFailOnError();
+
         readEasyConfig.getQueryFiles().forEach((namespace, filePaths)-> {
-            filePaths.stream().forEach(filePath -> {
+            filePaths.forEach(filePath -> {
                 log.info("Registering ReadEasy Config from file = {} with namespace = {}", filePath, namespace);
                 try {
-                    register(namespace, resourceLoader.getResource(filePath).getInputStream());
+                    String content = readInputStreamAsString(resourceLoader.getResource(filePath).getInputStream());
+
+                    // Validate query file if validation is enabled
+                    if (validationEnabled && queryValidator != null) {
+                        queryValidator.validateAndThrow(namespace, filePath, content, availableReaderIds, failOnError);
+                    }
+
+                    register(namespace, content);
                 } catch (IOException e) {
                     throw new IllegalStateException("Unable to Start read-easy engine. Error while registering file ="+filePath, e);
                 }
             });
         });
+
         if(null != readEasyConfig.getRequestContextSupplierInit()) {
             this.requestContextSupplier = ReflectionUtils.getInterfaceReference(readEasyConfig.getRequestContextSupplierInit(), Supplier.class, (s) -> applicationContext.getBean(s), environment::getProperty);
         }
         if(null != readEasyConfig.getGlobalContextSupplierInit()) {
             this.globalContextSupplier = ReflectionUtils.getInterfaceReference(readEasyConfig.getGlobalContextSupplierInit(), Supplier.class, (s) -> applicationContext.getBean(s), environment::getProperty);
         }
+
+        // Initialize dev mode query reloader if enabled
+        if (devModeQueryReloader != null) {
+            devModeQueryReloader.setQueryReference(queries, updatedQueries -> {
+                log.debug("Queries updated by dev mode reloader");
+            }, availableReaderIds);
+        }
+
+        log.info("Read-Easy initialized successfully with {} queries", queries.size());
     }
 
     private Map<String, GeneralReader> getGeneralReader(Map<String, GeneralReader> readEasyGeneralReaderMap, ReadEasyConfig readEasyConfig, ApplicationContext applicationContext){
+        // If bean is provided, use it directly
+        if(null != readEasyGeneralReaderMap && !readEasyGeneralReaderMap.isEmpty()){
+            return readEasyGeneralReaderMap;
+        }
+
+        // Bean not provided - build from config
         Map<String, GeneralReader> finalReadEasyGeneralReaderMap = new HashMap<>();
 
-        if(null == readEasyGeneralReaderMap){//bean not provided
-            if(null == readEasyConfig.getGeneralReaders()){
-                readEasyConfig.setGeneralReaders(new HashMap<>());
-            }
-            if(null != readEasyConfig.getGeneralReaderInit()){
-                readEasyConfig.getGeneralReaders().put("default", readEasyConfig.getGeneralReaderInit());
-            }
-            if(readEasyConfig.getGeneralReaders().isEmpty()){
-                throw new IllegalStateException("readEasyGeneralReaderMap is not provided either as @Autowired bean, nor it is provided in property 'readeasy.generalReaders'");
-            }
-            readEasyConfig.getGeneralReaders().forEach((readerId, readerInit) -> {
-                GeneralReader<?,?> generalReader = getInterfaceReference(readerInit, GeneralReader.class, applicationContext::getBean, environment::getProperty);
-                finalReadEasyGeneralReaderMap.put(readerId, generalReader);
-            });
+        if(null == readEasyConfig.getGeneralReaders()){
+            readEasyConfig.setGeneralReaders(new HashMap<>());
         }
+        if(null != readEasyConfig.getGeneralReaderInit()){
+            readEasyConfig.getGeneralReaders().put("default", readEasyConfig.getGeneralReaderInit());
+        }
+        if(readEasyConfig.getGeneralReaders().isEmpty()){
+            throw new IllegalStateException("readEasyGeneralReaderMap is not provided either as @Autowired bean, nor it is provided in property 'readeasy.generalReaders'");
+        }
+        readEasyConfig.getGeneralReaders().forEach((readerId, readerInit) -> {
+            GeneralReader<?,?> generalReader = getInterfaceReference(readerInit, GeneralReader.class, applicationContext::getBean, environment::getProperty);
+            finalReadEasyGeneralReaderMap.put(readerId, generalReader);
+        });
+
         return finalReadEasyGeneralReaderMap;
     }
 
     private void register(String namespace, InputStream inputStream){
-        QueryWithDynaBeans queryWithDynaBeans = SerDe.YAML.deserialize(readInputStreamAsString(inputStream), QueryWithDynaBeans.class);
+        register(namespace, readInputStreamAsString(inputStream));
+    }
+
+    private void register(String namespace, String content){
+        QueryWithDynaBeans queryWithDynaBeans = SerDe.YAML.deserialize(content, QueryWithDynaBeans.class);
         dynaBeansAutoConfiguration.initializeAndInject(namespace, queryWithDynaBeans.getDynaBeans());
         queryWithDynaBeans.getQueries().forEach((queryId, query) -> queries.put(namespace+"."+queryId, query));
     }
@@ -159,8 +202,24 @@ public class ConfiguredReadController {
             params.put("sort", sort);
         }
 
-        String transformedQuery = TemplateEngine.getInstance().generate(query.getRaw(), decorateDatapoints(params, null));
-        return query.getRawFormat().deserialize(transformedQuery, getGeneralReader(query.getReaderId()).getQueryType());
+        // Process template with better error handling
+        String transformedQuery;
+        try {
+            transformedQuery = TemplateEngine.getInstance().generate(query.getRaw(), decorateDatapoints(params, null));
+        } catch (Exception e) {
+            throw QueryTemplateException.fromTemplateError(queryId, query.getRaw(), e);
+        }
+
+        // Deserialize with better error handling
+        try {
+            return query.getRawFormat().deserialize(transformedQuery, getGeneralReader(query.getReaderId()).getQueryType());
+        } catch (Exception e) {
+            throw new QueryTemplateException(queryId,
+                    "Failed to parse rendered query as " + query.getRawFormat() + ": " + e.getMessage(),
+                    transformedQuery,
+                    "Check that the template produces valid " + query.getRawFormat() + " after variable substitution",
+                    e);
+        }
     }
 
     private Query getRegisteredQuery(String queryId) {

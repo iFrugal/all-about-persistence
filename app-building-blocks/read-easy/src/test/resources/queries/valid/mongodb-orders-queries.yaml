@@ -1,0 +1,93 @@
+# Valid MongoDB query file for testing - Orders collection
+queries:
+  findAll:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "orders",
+        "operation": "FIND",
+        "filter": {},
+        "sort": {"createdAt": -1}
+      }
+
+  findById:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "orders",
+        "operation": "FIND",
+        "filter": {"_id": "${params.id}"}
+      }
+    params:
+      id:
+        typeFqcn: "java.lang.String"
+        required: true
+
+  findByUserId:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "orders",
+        "operation": "FIND",
+        "filter": {"userId": "${params.userId}"},
+        "sort": {"createdAt": -1}
+      }
+    params:
+      userId:
+        typeFqcn: "java.lang.String"
+        required: true
+
+  search:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "orders",
+        "operation": "FIND",
+        "filter": {
+          <#if params.userId??>
+          "userId": "${params.userId}"
+          </#if>
+          <#if params.status??>
+          <#if params.userId??>,</#if>
+          "status": "${params.status}"
+          </#if>
+        },
+        "sort": {"createdAt": -1}
+      }
+    params:
+      userId:
+        typeFqcn: "java.lang.String"
+        required: false
+      status:
+        typeFqcn: "java.lang.String"
+        required: false
+
+  getOrderStatistics:
+    readerId: mongodb
+    rawFormat: YAML
+    raw: |-
+      {
+        "collectionName": "orders",
+        "operation": "AGGREGATE",
+        "pipeline": [
+          <#if params.userId??>
+          {"$match": {"userId": "${params.userId}"}},
+          </#if>
+          {
+            "$group": {
+              "_id": "$status",
+              "count": {"$sum": 1},
+              "totalAmount": {"$sum": "$totalAmount"}
+            }
+          },
+          {"$sort": {"totalAmount": -1}}
+        ]
+      }
+    params:
+      userId:
+        typeFqcn: "java.lang.String"
+        required: false

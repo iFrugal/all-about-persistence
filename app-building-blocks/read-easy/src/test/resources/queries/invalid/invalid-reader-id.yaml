@@ -1,0 +1,8 @@
+# Invalid query file - non-existent reader ID
+queries:
+  wrongReader:
+    readerId: nonexistent_reader
+    raw: |
+      {
+        "nativeSQL": "SELECT * FROM users"
+      }
