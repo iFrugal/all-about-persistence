@@ -107,6 +107,9 @@ public class ConfiguredReadController {
     private Map<String, GeneralReader> getGeneralReader(Map<String, GeneralReader> readEasyGeneralReaderMap, ReadEasyConfig readEasyConfig, ApplicationContext applicationContext){
         Map<String, GeneralReader> finalReadEasyGeneralReaderMap = new HashMap<>();
 
+        if(null != readEasyGeneralReaderMap){//bean provided - use it as-is
+            finalReadEasyGeneralReaderMap.putAll(readEasyGeneralReaderMap);
+        }
         if(null == readEasyGeneralReaderMap){//bean not provided
             if(null == readEasyConfig.getGeneralReaders()){
                 readEasyConfig.setGeneralReaders(new HashMap<>());
@@ -271,7 +274,7 @@ public class ConfiguredReadController {
     @PostMapping("/export")
     public void export(@RequestParam("queryId") String queryId, @RequestBody Map<String,Object> params, @RequestParam(value = "orderby", required = false) String orderby,
                        @RequestParam(value = "orderdir", required = false) String orderdir,
-                       @RequestParam(required = false) Long countFromClient,
+                       @RequestParam(value = "countFromClient", required = false) Long countFromClient,
                        HttpServletResponse response) throws IOException {
 
         export(response, countFromClient, queryId, params, orderby, orderdir);

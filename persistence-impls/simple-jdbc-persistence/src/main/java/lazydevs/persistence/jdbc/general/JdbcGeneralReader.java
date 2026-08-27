@@ -49,7 +49,24 @@ public class JdbcGeneralReader implements GeneralReader<JdbcOperation, Object> {
 
     @Override
     public Page<Map<String, Object>> findPage(Page.PageRequest pageRequest, JdbcOperation query, Map<String, Object> params) {
-        throw new UnsupportedOperationException("Not yet implemented.");
+        long total = count(query, params);
+        int pageSize = Math.max(1, pageRequest.getPageSize());
+        long offset = (long) (Math.max(1, pageRequest.getPageNum()) - 1) * pageSize;
+        List<Map<String, Object>> data = getResultSetMapper()
+                .findAllRowsAsMap(paginate(query.getNativeSQL(), pageSize, offset), query.getParamsAsArr());
+        return Page.<Map<String, Object>>builder(pageRequest)
+                .totalNoOfRecords(total)
+                .data(data)
+                .build();
+    }
+
+    /**
+     * Wraps the query for one page. LIMIT/OFFSET covers PostgreSQL, MySQL,
+     * MariaDB, SQLite and H2; override for dialects that page differently
+     * (Oracle/SQL Server: OFFSET ? ROWS FETCH NEXT ? ROWS ONLY).
+     */
+    protected String paginate(String nativeSQL, int pageSize, long offset) {
+        return String.format("select * from (%s) paged_query limit %d offset %d", nativeSQL, pageSize, offset);
     }
 
     @Override
@@ -65,7 +82,9 @@ public class JdbcGeneralReader implements GeneralReader<JdbcOperation, Object> {
 
     @Override
     public long count(JdbcOperation query, Map<String, Object> params) {
-        String q = query.getNativeSQL().toLowerCase();
+        // Wrap the SQL untouched: lowercasing it corrupts case-sensitive
+        // string literals and quoted identifiers inside the query.
+        String q = query.getNativeSQL();
         String q1 = String.format("select count(*) from (%s) countingQuery", q);
         log.debug("oldQuery = {}, newQuery = {}", q, q1);
         return getResultSetMapper().count(q1, query.getParamsAsArr());
