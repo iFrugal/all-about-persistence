@@ -39,6 +39,19 @@
 
    <build>
         <plugins>
+            <!-- Spring Framework 6.1+ (Boot 3.2+) no longer discovers handler
+                 parameter names from bytecode via ASM, so any @RequestParam /
+                 @PathVariable without an explicit name fails at runtime with
+                 "parameter name information not available via reflection"
+                 unless the classes are compiled with -parameters. Merged on
+                 top of ifrugal-parent's compiler configuration. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
