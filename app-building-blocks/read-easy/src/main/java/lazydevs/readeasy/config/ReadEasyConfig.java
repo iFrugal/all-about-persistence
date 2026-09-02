@@ -165,6 +165,64 @@ public class ReadEasyConfig{
      */
     private Map<Operation, Map<String, Object>> operationInstruction = new HashMap<>();
 
+    /**
+     * Startup-time query validation settings.
+     */
+    private ValidationConfig validation = new ValidationConfig();
+
+    /**
+     * Development tools (hot reload) settings.
+     */
+    private DevtoolsConfig devtools = new DevtoolsConfig();
+
+    /**
+     * Configuration for startup-time query validation.
+     *
+     * <p>Template validation is a FreeMarker parse-only check: it catches syntax
+     * errors (unclosed directives, malformed expressions) but never renders the
+     * template, so queries referencing request-specific variables validate cleanly.</p>
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * readeasy:
+     *   validation:
+     *     enabled: true           # validate query files at startup (default: true)
+     *     failOnError: false      # abort startup on errors; false logs warnings (default: false)
+     *     validateTemplates: true # compile-check FreeMarker syntax (default: true)
+     * }</pre>
+     */
+    @Getter @Setter @ToString
+    public static class ValidationConfig {
+        /** Validate query YAML files during registration. */
+        private boolean enabled = true;
+        /** Abort application startup when validation errors are found; when false, errors are logged as warnings. */
+        private boolean failOnError = false;
+        /** Compile-check FreeMarker syntax of 'raw' and rowTransformer templates. */
+        private boolean validateTemplates = true;
+    }
+
+    /**
+     * Configuration for development tools. Only enable in development environments.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * readeasy:
+     *   devtools:
+     *     enabled: true           # hot reload of query files (default: false)
+     *     watchIntervalMs: 2000   # file poll interval (default: 2000)
+     *     validateOnReload: true  # validate a changed file before applying it (default: true)
+     * }</pre>
+     */
+    @Getter @Setter @ToString
+    public static class DevtoolsConfig {
+        /** Enable hot reload of query YAML files. */
+        private boolean enabled = false;
+        /** Interval in milliseconds between file modification checks. */
+        private long watchIntervalMs = 2000;
+        /** Validate a changed file before applying it; an invalid file keeps the previous queries active. */
+        private boolean validateOnReload = true;
+    }
+
 
     /**
      * Container class for query YAML file structure.
