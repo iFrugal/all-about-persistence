@@ -58,6 +58,16 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- The JDK ships no JavaScript ScriptEngine since 15, so the
+             ScriptEngines.JAVASCRIPT tests need one. Test scope on purpose:
+             applications using the JS features must bring their own engine. -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.6</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 

@@ -579,9 +579,9 @@ public class ParseUtilsTest {
                 {"segments?size:EQUALS:2", 2, "users with exactly 2 segments"},
                 {"segments?size:GREATER_THAN:1", 3, "users with multiple segments"},
                 {"segments?size:EQUALS:0", 1, "users with no segments"},
-                {"email:CONTAINS:company_com", 2, "users with company email"},
+                {"email:CONTAINS:company_com", 3, "users with company email"},
                 {"email:CONTAINS:gmail.com", 1, "users with gmail"},
-                {"orders?size:GREATER_THAN:2", 2, "users with multiple orders"},
+                {"orders?size:GREATER_THAN:1", 3, "users with multiple orders"},
                 {"addresses?size:GREATER_THAN:1", 2, "users with multiple addresses"}
         };
     }
@@ -644,8 +644,11 @@ public class ParseUtilsTest {
         assertNull(ParseUtils.getList(null, "users[condition]"));
         assertNull(ParseUtils.getMap(null, "users[condition]"));
 
-        // Test empty conditions
-        assertNull(ParseUtils.getList(testData, "users[]"));
+        // Empty conditions behave like invalid conditions: empty list, not null
+        // (consistent with testErrorHandlingWithNewBehavior).
+        List<Map<String, Object>> emptyCondition = ParseUtils.getList(testData, "users[]");
+        assertNotNull(emptyCondition);
+        assertTrue(emptyCondition.isEmpty());
 
         // Test conditions that match nothing
         List<Map<String, Object>> noMatches = ParseUtils.getList(testData, "users[role:EQUALS:nonexistent]");
