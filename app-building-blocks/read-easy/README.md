@@ -326,6 +326,58 @@ readeasy:
 A query that fails to render or parse at request time returns HTTP 400 with a short, client-safe message naming the query and the missing variable.
 The full template and rendered query are written to the server log only, never to the HTTP response.
 
+## Multi-Tenancy with PostgreSQL Row-Level Security
+
+Read-Easy can enforce tenant isolation with PostgreSQL row-level security, driven entirely by configuration.
+The tenant id arrives in a request header, is held in `TenantContext` for the request, and is bound to a PostgreSQL session variable on every JDBC connection the reader uses.
+Your RLS policies read that variable, so the database itself filters rows per tenant and no query needs a `WHERE tenant_id = ...` clause.
+
+### 1. Database side (your SQL migrations)
+
+```sql
+ALTER TABLE employee ADD COLUMN tenant_id uuid;
+
+-- The app must connect as a role that does NOT own the table (owners bypass RLS),
+-- or use ALTER TABLE employee FORCE ROW LEVEL SECURITY.
+ALTER TABLE employee ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY employee_tenant_isolation ON employee
+    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+```
+
+If the variable is not set, `current_setting(..., true)` returns NULL and the policy matches no rows - it fails closed.
+
+### 2. Application side (YAML only)
+
+```yaml
+readeasy:
+  multitenancy:
+    enabled: true
+    headerName: X-Tenant-Id
+    required: true                        # 400 when the header is missing
+    tenantIdPattern: "[0-9a-fA-F-]{36}"   # optional validation
+    urlPatterns:
+      - /read/*
+
+  generalReaders:
+    default:
+      fqcn: lazydevs.persistence.jdbc.general.JdbcGeneralReader
+      constructorArgs:
+        - typeFqcn: javax.sql.DataSource
+          beanName: dataSource
+        - typeFqcn: java.lang.String
+          val: app.tenant_id              # enables RLS binding for this reader
+```
+
+The two-argument `JdbcGeneralReader(dataSource, settingName)` constructor wraps the DataSource in `RlsDataSource`, which runs `SELECT set_config('app.tenant_id', '<tenant>', false)` when a connection is checked out and clears it when the connection is released - including the long-held connection used by `/read/export` streaming.
+A pooled connection therefore never carries one request's tenant into the next.
+Omit the second constructor argument and the reader behaves exactly as before - RLS is opt-in per reader.
+
+By default, acquiring a connection with no tenant in scope throws (fail loud).
+`RlsDataSource` can be constructed with `failWhenTenantMissing=false` for jobs that legitimately run without a tenant; the database policy still fails closed.
+
+`JdbcGeneralUpdater` has the same two-argument constructor for RLS-enforced writes.
+
 ## Working with Different Databases
 
 ### JDBC (SQL Databases)

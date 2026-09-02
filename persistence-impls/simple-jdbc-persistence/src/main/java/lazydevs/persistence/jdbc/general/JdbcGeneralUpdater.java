@@ -5,6 +5,7 @@ import lazydevs.mapper.db.jdbc.JdbcRepository;
 import lazydevs.mapper.db.jdbc.simple.EntityAwarePreparedStatementSetter;
 import lazydevs.mapper.utils.engine.TemplateEngine;
 import lazydevs.persistence.connection.ConnectionProvider;
+import lazydevs.persistence.jdbc.rls.RlsDataSource;
 import lazydevs.persistence.writer.general.GeneralUpdater;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,6 +32,15 @@ public class JdbcGeneralUpdater implements GeneralUpdater<JdbcOperation, JdbcOpe
 
     public JdbcGeneralUpdater(DataSource dataSource){
         this(() ->  dataSource);
+    }
+
+    /**
+     * Writes through an {@link RlsDataSource} so inserts/updates/deletes run with
+     * the current tenant bound to the given PostgreSQL session variable, letting
+     * row-level security policies enforce tenant isolation on writes too.
+     */
+    public JdbcGeneralUpdater(DataSource dataSource, String rlsSettingName){
+        this(new RlsDataSource(dataSource, rlsSettingName));
     }
 
     @Override
