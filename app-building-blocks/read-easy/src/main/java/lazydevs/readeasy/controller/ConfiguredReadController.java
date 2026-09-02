@@ -87,6 +87,13 @@ public class ConfiguredReadController {
     @PostConstruct
     public void init() throws IOException {
         log.info(readInputStreamAsString(applicationContext.getResource(bannerPath).getInputStream()));
+        if (isNothingConfigured()) {
+            // Restoring Boot 3 auto-configuration must not break apps that merely carry
+            // read-easy on the classpath without using it: skip instead of failing boot.
+            // A partial configuration (query files but no readers) still fails fast below.
+            log.warn("read-easy is on the classpath but no readers or query files are configured. Skipping initialization.");
+            return;
+        }
         this.readEasyGeneralReaderMap = getGeneralReader(readEasyGeneralReaderMap, readEasyConfig, applicationContext);
         Set<String> availableReaderIds = this.readEasyGeneralReaderMap.keySet();
         ValidationConfig validation = readEasyConfig.getValidation();
@@ -112,6 +119,13 @@ public class ConfiguredReadController {
         if(null != readEasyConfig.getGlobalContextSupplierInit()) {
             this.globalContextSupplier = ReflectionUtils.getInterfaceReference(readEasyConfig.getGlobalContextSupplierInit(), Supplier.class, (s) -> applicationContext.getBean(s), environment::getProperty);
         }
+    }
+
+    private boolean isNothingConfigured() {
+        return null == readEasyGeneralReaderMap
+                && (null == readEasyConfig.getGeneralReaders() || readEasyConfig.getGeneralReaders().isEmpty())
+                && null == readEasyConfig.getGeneralReaderInit()
+                && readEasyConfig.getQueryFiles().isEmpty();
     }
 
     private Map<String, GeneralReader> getGeneralReader(Map<String, GeneralReader> readEasyGeneralReaderMap, ReadEasyConfig readEasyConfig, ApplicationContext applicationContext){
