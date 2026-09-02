@@ -3,6 +3,7 @@
 import lazydevs.mapper.db.jdbc.ResultSetMapper;
 import lazydevs.mapper.utils.BatchIterator;
 import lazydevs.persistence.connection.ConnectionProvider;
+import lazydevs.persistence.jdbc.rls.RlsDataSource;
 import lazydevs.persistence.reader.GeneralReader;
 import lazydevs.persistence.reader.Page;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,17 @@ public class JdbcGeneralReader implements GeneralReader<JdbcOperation, Object> {
 
     public JdbcGeneralReader(DataSource dataSource){
         this.connectionProvider = () ->  dataSource;
+    }
+
+    /**
+     * Reads through an {@link RlsDataSource} so every query runs with the current
+     * tenant bound to the given PostgreSQL session variable, letting row-level
+     * security policies (e.g. {@code USING (tenant_id = current_setting('app.tenant_id', true)::uuid)})
+     * filter rows per tenant. Wire it from YAML/InitDTO config as
+     * (beanName: dataSource, val: app.tenant_id).
+     */
+    public JdbcGeneralReader(DataSource dataSource, String rlsSettingName){
+        this(new RlsDataSource(dataSource, rlsSettingName));
     }
 
     @Override

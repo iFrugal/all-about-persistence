@@ -176,6 +176,42 @@ public class ReadEasyConfig{
     private DevtoolsConfig devtools = new DevtoolsConfig();
 
     /**
+     * Multi-tenancy settings: extracts the tenant id from a request header into
+     * {@code TenantContext}, where RLS-aware readers (e.g.
+     * {@code JdbcGeneralReader(dataSource, "app.tenant_id")}) pick it up.
+     */
+    private MultitenancyConfig multitenancy = new MultitenancyConfig();
+
+    /**
+     * Configuration for header-based tenant resolution.
+     *
+     * <p>Example:</p>
+     * <pre>{@code
+     * readeasy:
+     *   multitenancy:
+     *     enabled: true             # default: false
+     *     headerName: X-Tenant-Id
+     *     required: true            # 400 when the header is absent (default: true)
+     *     tenantIdPattern: "[0-9a-fA-F-]{36}"  # optional regex validation
+     *     urlPatterns:              # servlet paths the filter applies to
+     *       - /read/*
+     * }</pre>
+     */
+    @Getter @Setter @ToString
+    public static class MultitenancyConfig {
+        /** Enable the tenant header filter. */
+        private boolean enabled = false;
+        /** Header carrying the tenant id. */
+        private String headerName = "X-Tenant-Id";
+        /** Reject requests without the header with HTTP 400; when false, requests proceed with no tenant in scope. */
+        private boolean required = true;
+        /** Optional regex the header value must match (anchored full match); invalid values get HTTP 400. */
+        private String tenantIdPattern;
+        /** Servlet url patterns the filter is registered for. */
+        private List<String> urlPatterns = new ArrayList<>(List.of("/read/*"));
+    }
+
+    /**
      * Configuration for startup-time query validation.
      *
      * <p>Template validation is a FreeMarker parse-only check: it catches syntax
