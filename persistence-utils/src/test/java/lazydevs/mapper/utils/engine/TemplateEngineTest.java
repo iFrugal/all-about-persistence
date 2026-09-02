@@ -228,6 +228,21 @@ public class TemplateEngineTest {
         System.out.println(writer.toString());
     }
 
+    @Test
+    public void validateSyntaxAcceptsTemplatesReferencingAbsentVariables(){
+        // Parse-only: variables need not exist at validation time.
+        templateEngine.validateSyntax("SELECT * FROM t WHERE id = ${params.someUnknownVariable}");
+        templateEngine.validateSyntax("<#if params.x??>AND x = :x</#if>");
+    }
+
+    @Test
+    public void validateSyntaxRejectsMalformedTemplates(){
+        Assert.expectThrows(IllegalArgumentException.class,
+                () -> templateEngine.validateSyntax("<#if params.x?? AND x = :x"));
+        Assert.expectThrows(IllegalArgumentException.class,
+                () -> templateEngine.validateSyntax("<#list items as i>${i}"));
+    }
+
     @AllArgsConstructor @Getter
     static class Input{
         private String ax, bx, cx, dx;

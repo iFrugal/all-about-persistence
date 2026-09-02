@@ -2,7 +2,6 @@ package lazydevs.readeasy.controller;
 
 
 import lazydevs.mapper.utils.BatchIterator;
-import lazydevs.mapper.utils.SerDe;
 import lazydevs.mapper.utils.engine.TemplateEngine;
 import lazydevs.mapper.utils.reflection.ReflectionUtils;
 import lazydevs.persistence.reader.GeneralReader;
@@ -10,7 +9,10 @@ import lazydevs.persistence.reader.GeneralTransformer;
 import lazydevs.persistence.reader.Page;
 import lazydevs.readeasy.config.ReadEasyConfig;
 import lazydevs.readeasy.config.ReadEasyConfig.Query;
-import lazydevs.readeasy.config.ReadEasyConfig.QueryWithDynaBeans;
+import lazydevs.readeasy.config.ReadEasyConfig.ValidationConfig;
+import lazydevs.readeasy.registry.QueryRegistry;
+import lazydevs.readeasy.validation.QueryTemplateException;
+import lazydevs.readeasy.validation.QueryValidator;
 import lazydevs.services.basic.exception.RESTException;
 import lazydevs.services.basic.exception.ValidationException;
 import lazydevs.services.basic.validation.ParamValidator;
@@ -68,7 +70,8 @@ import static org.springframework.util.StringUtils.hasText;
 @Slf4j
 public class ConfiguredReadController {
 
-    private Map<String, Query> queries;
+    @Autowired private QueryRegistry queryRegistry;
+    private final QueryValidator queryValidator = new QueryValidator();
     @Autowired DynaBeansAutoConfiguration dynaBeansAutoConfiguration;
     @Autowired private ResourceLoader resourceLoader;
     @Autowired(required = false) @Qualifier("readEasyGeneralReaderMap") @Getter private Map<String, GeneralReader> readEasyGeneralReaderMap;
@@ -85,17 +88,24 @@ public class ConfiguredReadController {
     public void init() throws IOException {
         log.info(readInputStreamAsString(applicationContext.getResource(bannerPath).getInputStream()));
         this.readEasyGeneralReaderMap = getGeneralReader(readEasyGeneralReaderMap, readEasyConfig, applicationContext);
-        queries = new HashMap<>();
+        Set<String> availableReaderIds = this.readEasyGeneralReaderMap.keySet();
+        ValidationConfig validation = readEasyConfig.getValidation();
         readEasyConfig.getQueryFiles().forEach((namespace, filePaths)-> {
-            filePaths.stream().forEach(filePath -> {
+            filePaths.forEach(filePath -> {
                 log.info("Registering ReadEasy Config from file = {} with namespace = {}", filePath, namespace);
                 try {
-                    register(namespace, resourceLoader.getResource(filePath).getInputStream());
+                    String content = readInputStreamAsString(resourceLoader.getResource(filePath).getInputStream());
+                    if (validation.isEnabled()) {
+                        queryValidator.validateAndThrow(namespace, filePath, content, availableReaderIds,
+                                validation.isValidateTemplates(), validation.isFailOnError());
+                    }
+                    queryRegistry.register(namespace, filePath, content);
                 } catch (IOException e) {
                     throw new IllegalStateException("Unable to Start read-easy engine. Error while registering file ="+filePath, e);
                 }
             });
         });
+        log.info("Read-Easy initialized with {} queries", queryRegistry.size());
         if(null != readEasyConfig.getRequestContextSupplierInit()) {
             this.requestContextSupplier = ReflectionUtils.getInterfaceReference(readEasyConfig.getRequestContextSupplierInit(), Supplier.class, (s) -> applicationContext.getBean(s), environment::getProperty);
         }
@@ -128,10 +138,14 @@ public class ConfiguredReadController {
         return finalReadEasyGeneralReaderMap;
     }
 
-    private void register(String namespace, InputStream inputStream){
-        QueryWithDynaBeans queryWithDynaBeans = SerDe.YAML.deserialize(readInputStreamAsString(inputStream), QueryWithDynaBeans.class);
-        dynaBeansAutoConfiguration.initializeAndInject(namespace, queryWithDynaBeans.getDynaBeans());
-        queryWithDynaBeans.getQueries().forEach((queryId, query) -> queries.put(namespace+"."+queryId, query));
+    private void register(String namespace, String sourceKey, InputStream inputStream){
+        String content = readInputStreamAsString(inputStream);
+        ValidationConfig validation = readEasyConfig.getValidation();
+        if (validation.isEnabled()) {
+            queryValidator.validateAndThrow(namespace, sourceKey, content, readEasyGeneralReaderMap.keySet(),
+                    validation.isValidateTemplates(), true);
+        }
+        queryRegistry.register(namespace, sourceKey, content);
     }
 
     private Map<String, Object> decorateDatapoints(Map<String, Object> data, Map<String, Object> params){
@@ -162,12 +176,30 @@ public class ConfiguredReadController {
             params.put("sort", sort);
         }
 
-        String transformedQuery = TemplateEngine.getInstance().generate(query.getRaw(), decorateDatapoints(params, null));
-        return query.getRawFormat().deserialize(transformedQuery, getGeneralReader(query.getReaderId()).getQueryType());
+        GeneralReader generalReader = getGeneralReader(query.getReaderId());
+
+        String transformedQuery;
+        try {
+            transformedQuery = TemplateEngine.getInstance().generate(query.getRaw(), decorateDatapoints(params, null));
+        } catch (Exception e) {
+            log.error("Template rendering failed for queryId = {}. Template:\n{}", queryId, query.getRaw(), e);
+            throw new QueryTemplateException(queryId,
+                    "Query '" + queryId + "' failed to render: " + QueryTemplateException.summarize(e)
+                            + ". Check that all required parameters are provided.", e);
+        }
+        try {
+            return query.getRawFormat().deserialize(transformedQuery, generalReader.getQueryType());
+        } catch (Exception e) {
+            log.error("Rendered query for queryId = {} is not valid {}. Rendered query:\n{}",
+                    queryId, query.getRawFormat(), transformedQuery, e);
+            throw new QueryTemplateException(queryId,
+                    "Query '" + queryId + "' rendered to invalid " + query.getRawFormat()
+                            + ". Check the query definition and the provided parameters.", e);
+        }
     }
 
     private Query getRegisteredQuery(String queryId) {
-        Query query = queries.get(queryId);
+        Query query = queryRegistry.get(queryId);
         if(null == query){
             throw new ValidationException("No query found registered for queryId = "+queryId);
         }
@@ -209,7 +241,8 @@ public class ConfiguredReadController {
     @PostMapping(value = "/register", consumes = MULTIPART_FORM_DATA_VALUE)
     public void register(@RequestPart(name = "namespace", required = false) String namespace,
                          @RequestPart(name = "registrationFile") MultipartFile registrationFile) throws IOException {
-        register(namespace, registrationFile.getInputStream());
+        register(namespace, "upload:" + namespace + ":" + registrationFile.getOriginalFilename(),
+                registrationFile.getInputStream());
     }
 
     @PostMapping("/one")

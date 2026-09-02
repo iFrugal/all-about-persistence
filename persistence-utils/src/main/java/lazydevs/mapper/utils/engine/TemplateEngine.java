@@ -79,6 +79,23 @@ public class TemplateEngine {
             return stringWriter.toString();
     }
 
+    /**
+     * Parses the template without processing it, so pure syntax errors (unclosed
+     * directives, malformed expressions) surface without any data model. Unlike
+     * {@link #generate}, a template referencing variables that are absent at parse
+     * time is still valid here - only FreeMarker parse errors are reported.
+     *
+     * @throws IllegalArgumentException with FreeMarker's parse message (includes
+     *         line/column) when the template source is not valid FreeMarker
+     */
+    public void validateSyntax(String templateSource) {
+        try {
+            new Template("syntax-validation", templateSource, this.configuration);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
+    }
+
     public void generate(Writer writer, String templateSource, Map<String, Object> datapoints) {
         try {
             Map<String, Object> data = new HashMap<>(datapoints);

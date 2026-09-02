@@ -287,6 +287,45 @@ ${params.limit!10}
 ${.now?string('yyyy-MM-dd')}
 ```
 
+## Query Validation and Dev Tools
+
+### Startup validation
+
+Read-Easy validates query files during registration.
+The check covers YAML structure, presence of `raw`, known `readerId` values, and FreeMarker syntax of `raw` and `rowTransformer.template`.
+Template validation is parse-only: it never renders the template, so queries referencing request-time variables such as `${params.customerId}` or `${request.userId}` validate cleanly.
+
+```yaml
+readeasy:
+  validation:
+    enabled: true           # validate query files at startup (default: true)
+    failOnError: false      # abort startup on errors; false logs warnings (default: false)
+    validateTemplates: true # compile-check FreeMarker syntax (default: true)
+```
+
+Set `failOnError: true` in development to fail fast on broken query files.
+The default keeps existing applications booting and reports problems as warnings.
+
+### Hot reload (dev mode)
+
+With dev tools enabled, changed query files are re-registered without a restart.
+Only `file:` resources can be watched; classpath resources inside a JAR are skipped with a warning.
+An invalid save is rejected and the previous queries stay active.
+Reloading one file only replaces the queries that file contributed, even when several files share a namespace.
+
+```yaml
+readeasy:
+  devtools:
+    enabled: true           # default: false; only enable in development
+    watchIntervalMs: 2000   # file poll interval
+    validateOnReload: true  # validate a changed file before applying it
+```
+
+### Runtime template errors
+
+A query that fails to render or parse at request time returns HTTP 400 with a short, client-safe message naming the query and the missing variable.
+The full template and rendered query are written to the server log only, never to the HTTP response.
+
 ## Working with Different Databases
 
 ### JDBC (SQL Databases)
