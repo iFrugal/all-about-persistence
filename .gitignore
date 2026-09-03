@@ -2,3 +2,5 @@
 target/
 *.iml
 h2/
+# test output written by GeneralFileMapperWriterTest
+persistence-impls/file-persistence/abcd.xlsx

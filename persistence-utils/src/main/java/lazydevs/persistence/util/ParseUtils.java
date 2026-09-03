@@ -6,6 +6,7 @@ import lazydevs.persistence.util.ConditionEvaluator.Operator;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +63,35 @@ public class ParseUtils {
         return value != null ? value.toString() : null;
     }
 
+    /**
+     * Splits a path expression on '.' while treating everything inside square
+     * brackets as opaque, so condition values may contain dots
+     * (e.g. {@code users[email:CONTAINS:gmail.com].name}).
+     */
+    private static String[] splitPath(String attributeName) {
+        List<String> tokens = new ArrayList<>();
+        int depth = 0;
+        StringBuilder current = new StringBuilder();
+        for (int i = 0; i < attributeName.length(); i++) {
+            char c = attributeName.charAt(i);
+            if (c == '[') depth++;
+            else if (c == ']') depth--;
+            if (c == '.' && depth == 0) {
+                tokens.add(current.toString());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        tokens.add(current.toString());
+        return tokens.toArray(new String[0]);
+    }
+
     // Enhanced get method with consistent array behavior
     public static Object get(Map<String, Object> map, @NonNull String attributeName){
         if (map == null) return null;
 
-        String[] tokens = attributeName.split("\\.");
+        String[] tokens = splitPath(attributeName);
         Object value = map;
 
         for(int i = 0; i < tokens.length; i++){

@@ -52,6 +52,26 @@
                     <parameters>true</parameters>
                 </configuration>
             </plugin>
+            <!-- The test suites mix JUnit 5 and TestNG classes. With both frameworks
+                 on the classpath, Surefire auto-selects a single provider (JUnit
+                 Platform), silently skipping every TestNG test. Declaring both
+                 providers explicitly makes Surefire run each framework's tests. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit-platform</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-testng</artifactId>
+                        <version>${maven-surefire-plugin.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -74,5 +94,28 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencies>
+        <!-- Companion to the dual Surefire providers above: the JUnit Platform
+             provider refuses to run without at least one TestEngine on the
+             classpath, so every module gets the Jupiter engine (TestNG already
+             comes to every module from ifrugal-parent). Test scope only. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.12.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Launcher aligned with the engine above; without it Surefire falls
+             back to its own (older) launcher and discovery fails with
+             "OutputDirectoryProvider not available". 1.12.0 also matches the
+             launcher groovy-test-junit5 drags into persistence-utils. -->
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.12.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 </project>

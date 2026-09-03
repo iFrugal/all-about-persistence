@@ -58,6 +58,17 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Declared before the Spring Boot BOM so JUnit stays aligned with
+                 the launcher/engine the root pom supplies for Surefire; the Boot
+                 3.0 BOM would otherwise pin JUnit back to the 5.9 line, splitting
+                 platform versions and breaking test discovery. -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.12.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
