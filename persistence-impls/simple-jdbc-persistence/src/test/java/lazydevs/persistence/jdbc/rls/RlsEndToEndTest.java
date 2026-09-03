@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Proves the full wiring through {@link JdbcGeneralReader}: the tenant GUC is
@@ -25,6 +26,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * exports. H2 stands in for PostgreSQL via a {@code SET_CONFIG} alias that
  * records invocations; the actual row filtering is PostgreSQL's job and is
  * covered by the policy, not this test.
+ *
+ * <p>Scope, stated plainly: H2 has neither row-level security nor PostgreSQL's
+ * {@code ''::uuid} cast semantics, so nothing here can demonstrate the error a
+ * casting policy raises against a released connection. What these tests DO
+ * pin down is the binding sequence - that a tenant-less checkout binds a value
+ * of its own rather than inheriting whatever the previous request left behind -
+ * which is the library-side half of that bug. The cast hazard itself is covered
+ * by documentation ({@link TenantBoundConnection} and the read-easy README).</p>
  */
 public class RlsEndToEndTest {
 
@@ -85,6 +94,37 @@ public class RlsEndToEndTest {
             assertEquals(List.of("app.tenant_id=t1"), SET_CONFIG_CALLS);
         }
         assertEquals(List.of("app.tenant_id=t1", "app.tenant_id="), SET_CONFIG_CALLS);
+    }
+
+    /**
+     * The pool-reuse repro from the issue, as far as H2 can express it. Before
+     * MissingTenant existed, the second read recorded no set_config at all and
+     * ran against the '' left by the first read's reset; now it binds its own
+     * stand-in, so the session state is identical whether or not a tenant-scoped
+     * request came first.
+     */
+    @Test
+    void tenantLessReadBindsAStandInRatherThanInheritingTheReleasedSessionState() {
+        JdbcGeneralReader reader = new JdbcGeneralReader(h2, "app.tenant_id", "");
+        JdbcOperation query = JdbcOperation.nativeSql("select * from employee order by id");
+
+        TenantContext.setTenantId("t1");
+        reader.findAll(query, Map.of());
+
+        TenantContext.reset();
+        reader.findAll(query, Map.of());
+
+        assertEquals(List.of(
+                "app.tenant_id=t1", "app.tenant_id=",
+                "app.tenant_id=", "app.tenant_id="), SET_CONFIG_CALLS);
+    }
+
+    @Test
+    void tenantLessReadStillThrowsUnderTheDefaultFailMode() {
+        JdbcGeneralReader reader = new JdbcGeneralReader(h2, "app.tenant_id");
+        TenantContext.reset();
+        assertThrows(IllegalStateException.class, () -> reader.findAll(
+                JdbcOperation.nativeSql("select * from employee"), Map.of()));
     }
 
     @Test

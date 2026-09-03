@@ -62,8 +62,13 @@ public final class TenantBoundConnection implements InvocationHandler {
             return;
         }
         try {
-            // Empty value fails closed: a policy casting current_setting(...) to uuid
-            // errors loudly, and an equality check matches no tenant.
+            // '' rather than "unset": PostgreSQL offers no way back to unset for a
+            // custom GUC once it has been written (set_config(name, NULL),
+            // RESET and DISCARD ALL all leave ''), so '' IS the cleared state
+            // and every checkout after the first one sees it. An equality check
+            // against '' matches no tenant; a policy that CASTS the setting must
+            // therefore be written nullif(current_setting(...), '')::uuid,
+            // because a bare ''::uuid raises instead of matching nothing.
             setConfig(delegate, settingName, "");
         } catch (SQLException resetFailure) {
             try {

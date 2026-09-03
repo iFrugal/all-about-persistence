@@ -22,15 +22,20 @@ import java.util.logging.Logger;
  * open across a streamed export) acquires and closes connections through the
  * DataSource, decorating at this seam covers all of them.</p>
  *
- * <p>When no tenant is in scope, the default is to throw (fail loud); with
- * {@code failWhenTenantMissing=false} the raw connection is returned unbound and
- * the database policy itself fails closed (an unset variable matches no rows).</p>
+ * <p>When no tenant is in scope the behaviour is {@link RlsSettings#getMissingTenant()}:
+ * {@link MissingTenant#FAIL} (the default) throws, and {@link MissingTenant#BIND}
+ * binds a configured stand-in value - the empty string unless set otherwise -
+ * through the same bind-and-reset path, so the session state a policy sees does
+ * not depend on how warm the pool is.</p>
  *
- * <p>The DB side (policies, roles) is owned by your SQL migrations, e.g.:</p>
+ * <p>The DB side (policies, roles) is owned by your SQL migrations. Write the
+ * predicate so an empty tenant matches nothing rather than raising - a bare
+ * {@code ''::uuid} is an error, and {@code ''} is what a released connection is
+ * reset to:</p>
  * <pre>{@code
  * ALTER TABLE employee ENABLE ROW LEVEL SECURITY;
  * CREATE POLICY employee_tenant_isolation ON employee
- *     USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+ *     USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
  * }</pre>
  *
  * @author Abhijeet Rai
@@ -58,6 +63,15 @@ public class RlsDataSource implements DataSource {
         this(delegate, new RlsSettings(settingName));
     }
 
+    /**
+     * Convenience constructor for config-driven wiring that must also serve
+     * requests with no tenant: supplying {@code missingTenantValue} selects
+     * {@link MissingTenant#BIND} and binds that value when the tenant is absent.
+     */
+    public RlsDataSource(DataSource delegate, String settingName, String missingTenantValue) {
+        this(delegate, new RlsSettings(settingName, missingTenantValue));
+    }
+
     @Override
     public Connection getConnection() throws SQLException {
         return bindTenant(delegate.getConnection());
@@ -71,13 +85,16 @@ public class RlsDataSource implements DataSource {
     private Connection bindTenant(Connection connection) throws SQLException {
         String tenantId = settings.getTenantSupplier().get();
         if (null == tenantId || tenantId.isEmpty()) {
-            if (settings.isFailWhenTenantMissing()) {
+            if (MissingTenant.FAIL == settings.getMissingTenant()) {
                 closeQuietly(connection);
                 throw new IllegalStateException("No tenant in scope while acquiring an RLS-bound connection ("
-                        + settings.getSettingName() + "). Set TenantContext (or configure failWhenTenantMissing=false).");
+                        + settings.getSettingName() + "). Set TenantContext (or configure MissingTenant.BIND).");
             }
-            log.debug("No tenant in scope; returning connection without setting {}", settings.getSettingName());
-            return connection;
+            // Bound, not skipped: an unbound connection reads back as NULL when
+            // fresh and as '' once recycled, and a policy cannot be written
+            // against both.
+            tenantId = settings.getMissingTenantValue();
+            log.debug("No tenant in scope; binding {} = '{}'", settings.getSettingName(), tenantId);
         }
         try {
             TenantBoundConnection.setConfig(connection, settings.getSettingName(), tenantId);
