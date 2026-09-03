@@ -40,6 +40,18 @@ public class JdbcGeneralReader implements GeneralReader<JdbcOperation, Object> {
         this(new RlsDataSource(dataSource, rlsSettingName));
     }
 
+    /**
+     * As above, but requests with no tenant in scope bind {@code missingTenantValue}
+     * instead of failing - the mode for tables whose rows are shared across all
+     * tenants (typically {@code tenant_id IS NULL}) and must stay readable
+     * without one. Wire it from YAML/InitDTO config as a third constructor arg
+     * (beanName: dataSource, val: app.tenant_id, val: ""); its presence is what
+     * selects {@link lazydevs.persistence.jdbc.rls.MissingTenant#BIND}.
+     */
+    public JdbcGeneralReader(DataSource dataSource, String rlsSettingName, String missingTenantValue){
+        this(new RlsDataSource(dataSource, rlsSettingName, missingTenantValue));
+    }
+
     @Override
     public Map<String, Object> findOne(JdbcOperation query, Map<String, Object> params) {
         List<Map<String, Object>> response = (List<Map<String, Object>>) getResultSetMapper().findAllRowsAsMap(query.getNativeSQL(), query.getParamsAsArr());

@@ -342,12 +342,60 @@ ALTER TABLE employee ADD COLUMN tenant_id uuid;
 ALTER TABLE employee ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY employee_tenant_isolation ON employee
-    USING (tenant_id = current_setting('app.tenant_id', true)::uuid);
+    USING (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
 ```
 
-If the variable is not set, `current_setting(..., true)` returns NULL and the policy matches no rows - it fails closed.
+**Write the `nullif(..., '')` in, even if you think you do not need it.** A custom
+PostgreSQL GUC has three possible states, not two, and the third one bites:
 
-### 2. Application side (YAML only)
+| session state | `current_setting('app.tenant_id', true)` |
+|---|---|
+| never written in this session | `NULL` |
+| bound to a tenant | the tenant id |
+| **released back to the pool** | `''` — *not* `NULL` |
+
+There is no way back to the first state once the variable has been written:
+`set_config(name, NULL, false)`, `RESET name` and even `DISCARD ALL` all leave the
+empty string. So on a pooled connection the empty string is the normal cleared
+state, and `''::uuid` raises `invalid input syntax for type uuid: ""` rather than
+matching nothing. `nullif(current_setting(...), '')::uuid` folds it back to NULL,
+which is correct in all three states. A `text` tenant column needs no cast and is
+safe either way.
+
+### 2. Shared rows: `tenant_id IS NULL` visible to every tenant
+
+Plenty of schemas are not "every row belongs to exactly one tenant". A row with
+no owner — a platform default, a shared catalogue, a pool every customer can
+draw from — is usually modelled as a nullable `tenant_id`, readable by all and
+writable by none of them:
+
+```sql
+CREATE POLICY employee_read ON employee FOR SELECT
+    USING (tenant_id IS NULL                                                -- shared
+           OR tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
+
+CREATE POLICY employee_write ON employee FOR ALL
+    USING      (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid)
+    WITH CHECK (tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid);
+```
+
+> **Read this before splitting a policy in two: multiple permissive policies are
+> combined with OR, not AND.** Adding `employee_read` next to `employee_write`
+> *widens* what SELECT can see (`FOR ALL` also applies to SELECT, and the two
+> `USING` clauses are OR'd) — it does not restrict it. That is what makes the
+> pair above correct: reads see shared + own, while writes are confined to own by
+> `employee_write`'s `WITH CHECK`, which `employee_read` cannot relax because a
+> `FOR SELECT` policy has no `WITH CHECK`. If you want a policy that genuinely
+> narrows, that is `CREATE POLICY ... AS RESTRICTIVE`. A single policy carrying
+> both `USING` and `WITH CHECK` avoids the question entirely and is the simpler
+> choice when one predicate covers reads.
+
+The corollary is a request with **no tenant at all** — a public read, a warm-up
+job, a health probe — which must still see the shared rows. Configure the reader
+with a stand-in value so those connections are bound rather than left to chance
+(see §4).
+
+### 3. Application side (YAML only)
 
 ```yaml
 readeasy:
@@ -373,10 +421,50 @@ The two-argument `JdbcGeneralReader(dataSource, settingName)` constructor wraps 
 A pooled connection therefore never carries one request's tenant into the next.
 Omit the second constructor argument and the reader behaves exactly as before - RLS is opt-in per reader.
 
-By default, acquiring a connection with no tenant in scope throws (fail loud).
-`RlsDataSource` can be constructed with `failWhenTenantMissing=false` for jobs that legitimately run without a tenant; the database policy still fails closed.
+`JdbcGeneralUpdater` has the same constructors for RLS-enforced writes.
 
-`JdbcGeneralUpdater` has the same two-argument constructor for RLS-enforced writes.
+### 4. Requests with no tenant in scope
+
+`RlsSettings.missingTenant` decides what happens when a connection is acquired
+and `TenantContext` is empty:
+
+| `MissingTenant` | behaviour |
+|---|---|
+| `FAIL` (default) | throw `IllegalStateException`. A tenant-less checkout is usually a wiring mistake, and the policy failing closed hides it. |
+| `BIND` | bind `missingTenantValue` (default `''`) and wrap the connection exactly as a tenant-scoped one, so the reset-on-close guarantee holds and the session state is the same on every checkout. |
+
+`BIND` is the mode for the shared-rows model in §2: the predicate's own-tenant
+branch matches nothing, the `tenant_id IS NULL` branch matches, and the caller
+gets the shared rows and only those. Select it from YAML with a third
+constructor argument:
+
+```yaml
+      constructorArgs:
+        - typeFqcn: javax.sql.DataSource
+          beanName: dataSource
+        - typeFqcn: java.lang.String
+          val: app.tenant_id
+        - typeFqcn: java.lang.String
+          val: ""                         # presence of this arg selects BIND
+```
+
+or in code:
+
+```java
+new JdbcGeneralReader(dataSource, "app.tenant_id", "");
+
+new RlsDataSource(dataSource,
+        new RlsSettings("app.tenant_id", MissingTenant.BIND, "", TenantContext::getTenantId));
+```
+
+**Upgrading from `failWhenTenantMissing = false`.** That flag is deprecated and
+now maps to `BIND("")`. It used to hand back an *unbound* connection, which read
+back as `NULL` on a connection the pool had never used and `''` on one it had —
+so under a casting policy the same tenant-less request succeeded against a cold
+pool and failed against a warm one. It is now deterministic, which means a
+`::uuid` policy without `nullif` will fail *every* time instead of
+intermittently. **Adopt the `nullif(current_setting(...), '')::uuid` form from §1
+in the same change as the version bump**, not as a follow-up.
 
 ## Working with Different Databases
 

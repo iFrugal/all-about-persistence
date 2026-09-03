@@ -43,6 +43,17 @@ public class JdbcGeneralUpdater implements GeneralUpdater<JdbcOperation, JdbcOpe
         this(new RlsDataSource(dataSource, rlsSettingName));
     }
 
+    /**
+     * As above, but writes with no tenant in scope bind {@code missingTenantValue}
+     * instead of failing. Note that this widens nothing by itself: what a
+     * tenant-less session may write is still whatever the policy's WITH CHECK
+     * clause allows, which for shared rows should be narrower than its USING
+     * clause.
+     */
+    public JdbcGeneralUpdater(DataSource dataSource, String rlsSettingName, String missingTenantValue){
+        this(new RlsDataSource(dataSource, rlsSettingName, missingTenantValue));
+    }
+
     @Override
     public Map<String, Object> replace(Map<String, Object> row, JdbcOperation jdbcOperation) {
         executeUpdate(row, jdbcOperation);

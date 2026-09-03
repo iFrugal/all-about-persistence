@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -116,14 +117,66 @@ class RlsDataSourceTest {
     }
 
     @Test
-    void missingTenantPassesThroughWhenConfiguredLenient() throws SQLException {
+    void missingTenantBindsTheStandInValueAndStillResetsOnClose() throws SQLException {
         FakeDb db = new FakeDb();
         RlsDataSource rls = new RlsDataSource(db.dataSource(),
-                new RlsSettings("app.tenant_id", false, TenantContext::getTenantId));
+                new RlsSettings("app.tenant_id", MissingTenant.BIND, ""));
         Connection connection = rls.getConnection();
-        assertTrue(db.events.isEmpty(), "no set_config expected without a tenant");
+        assertEquals(List.of("app.tenant_id="), db.events, "the stand-in must be bound, not skipped");
         connection.close();
-        assertEquals(List.of("connection-closed"), db.events);
+        assertEquals(List.of("app.tenant_id=", "app.tenant_id=", "connection-closed"), db.events);
+    }
+
+    @Test
+    void missingTenantCanBindACustomStandInValue() throws SQLException {
+        FakeDb db = new FakeDb();
+        Connection connection = new RlsDataSource(db.dataSource(), "app.tenant_id", "~pool").getConnection();
+        assertEquals(List.of("app.tenant_id=~pool"), db.events);
+        connection.close();
+        assertEquals(List.of("app.tenant_id=~pool", "app.tenant_id=", "connection-closed"), db.events);
+    }
+
+    /**
+     * The regression this whole change exists for. Before it, the second
+     * checkout recorded NO set_config at all, leaving the connection carrying
+     * the '' written by the first one's reset - which a policy casting the
+     * setting to uuid rejects outright, while a never-used connection (NULL)
+     * would have been fine. Same request, two outcomes, chosen by pool warmth.
+     */
+    @Test
+    void tenantLessCheckoutAfterATenantScopedOneBindsRatherThanInheritingSessionState() throws SQLException {
+        FakeDb db = new FakeDb();
+        RlsDataSource rls = new RlsDataSource(db.dataSource(),
+                new RlsSettings("app.tenant_id", MissingTenant.BIND, ""));
+
+        TenantContext.setTenantId("tenant-1");
+        rls.getConnection().close();
+
+        // FakeDb models ONE physical connection, and its close() is real rather
+        // than a return-to-pool, so clear the flag to represent the pool handing
+        // that same connection back. This is the whole scenario: the second
+        // checkout runs on a connection that has already been bound and reset.
+        db.closed = false;
+
+        TenantContext.reset();
+        rls.getConnection().close();
+
+        assertEquals(List.of(
+                "app.tenant_id=tenant-1", "app.tenant_id=", "connection-closed",
+                "app.tenant_id=", "app.tenant_id=", "connection-closed"), db.events);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void legacyLenientFlagMapsToBindingTheEmptyString() throws SQLException {
+        FakeDb db = new FakeDb();
+        RlsSettings settings = new RlsSettings("app.tenant_id", false, TenantContext::getTenantId);
+        assertEquals(MissingTenant.BIND, settings.getMissingTenant());
+        assertFalse(settings.isFailWhenTenantMissing());
+
+        Connection connection = new RlsDataSource(db.dataSource(), settings).getConnection();
+        assertEquals(List.of("app.tenant_id="), db.events);
+        connection.close();
     }
 
     @Test
