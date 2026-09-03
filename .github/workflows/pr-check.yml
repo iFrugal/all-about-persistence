@@ -1,0 +1,32 @@
+name: PR Checks
+
+# The release workflow deliberately skips tests (-Dmaven.test.skip=true),
+# so this workflow is the only place the test suites gate anything.
+# It runs the full reactor's JUnit 5 and TestNG suites on every pull request.
+# ubuntu-latest runners provide Docker, so Testcontainers-based tests run here too.
+
+on:
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+concurrency:
+  group: pr-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B -ntp -Dgpg.skip=true test
