@@ -1,0 +1,7 @@
+queries:
+  all:
+    readerId: default
+    raw: |
+      {
+        "nativeSQL": "SELECT id, name FROM item ORDER BY id"
+      }

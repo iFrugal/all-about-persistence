@@ -8,6 +8,7 @@ import lazydevs.readeasy.registry.QueryRegistry;
 import lazydevs.readeasy.web.TenantFilter;
 import lazydevs.services.basic.validation.ParamValidator;
 import lazydevs.springhelpers.dynabeans.DynaBeansAutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -28,13 +29,15 @@ import org.springframework.core.io.ResourceLoader;
  *   <li>{@link ParamValidator} - request parameter validation</li>
  * </ul>
  *
- * <p>Registered for Spring Boot 3 via
- * {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports}
- * (the legacy {@code spring.factories} entry is kept for Boot 2 consumers).</p>
+ * <p>Registered via
+ * {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports}.
+ * Ordered after {@link DynaBeansAutoConfiguration}, whose {@code dynaBeansGenerator}
+ * bean and configuration instance this auto-configuration depends on.</p>
  *
  * @author Abhijeet Rai
  */
 @Configuration
+@AutoConfigureAfter(DynaBeansAutoConfiguration.class)
 @EnableConfigurationProperties(ReadEasyConfig.class)
 @Import({ConfiguredReadController.class, ParamValidator.class})
 public class ReadEasyAutoConfiguration {

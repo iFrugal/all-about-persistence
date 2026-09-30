@@ -65,7 +65,7 @@ public class BasicRequestFilter extends OncePerRequestFilter {
             MDC.put(REQUEST_ID_HEADER, context.getRequestId());
         }
         response.addHeader(REQUEST_ID_HEADER, context.getRequestId());
-        TenantContext.setTenantId(StringUtils.hasText(context.getSelectedTenantCode())? context.getTenantCode() : context.getSelectedTenantCode());
+        TenantContext.setTenantId(StringUtils.hasText(context.getSelectedTenantCode())? context.getSelectedTenantCode() : context.getTenantCode());
     }
 
     protected void setApplicationSpecificAttributes(){

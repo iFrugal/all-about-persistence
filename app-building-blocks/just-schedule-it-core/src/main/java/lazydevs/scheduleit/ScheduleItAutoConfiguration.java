@@ -12,6 +12,7 @@ import org.reflections.scanners.Scanners;
 import org.reflections.util.ConfigurationBuilder;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -32,8 +33,14 @@ import static java.util.Objects.requireNonNull;
 import static org.reflections.util.ClasspathHelper.forPackage;
 import static org.springframework.util.StringUtils.isEmpty;
 
+/**
+ * Registered as Boot auto-configuration. It depends on the {@code dynaBeansGenerator}
+ * bean, so it only activates when dyna-beans-injector (itself auto-configured) is on
+ * the classpath; hosts carrying this jar without dyna-beans start as before.
+ */
 @Slf4j
 @Configuration
+@ConditionalOnClass(name = "lazydevs.springhelpers.dynabeans.DynaBeansAutoConfiguration")
 @DependsOn("dynaBeansGenerator") @Import({ScheduleItConfig.class, ScheduleItService.class})
 public class ScheduleItAutoConfiguration {
     @Autowired private Environment environment;
