@@ -35,6 +35,8 @@ public class LazyTemplatesDirectoryTest {
 
     private final File templatesDir = new File("templates");
     private File backupDir;
+    private boolean createdTemplatesDir;
+    private boolean createdTemplateFile;
     private TemplateEngine singleton;
     private TemplateEngine engineCreatedWithoutDirectory;
     private Path tempDir;
@@ -42,8 +44,10 @@ public class LazyTemplatesDirectoryTest {
     @BeforeClass
     public void moveTemplatesDirectoryAsideAndCreateEngines() throws Exception {
         if (templatesDir.exists()) {
-            backupDir = new File("templates.lazy-check-backup-" + System.nanoTime());
-            assertTrue(templatesDir.renameTo(backupDir), "could not move existing templates folder aside");
+            File candidate = new File("templates.lazy-check-backup-" + System.nanoTime());
+            assertTrue(templatesDir.renameTo(candidate), "could not move existing templates folder aside");
+            // Recorded only after the rename succeeded, so cleanup never touches a folder this test did not move.
+            backupDir = candidate;
         }
         assertFalse(templatesDir.exists());
 
@@ -59,9 +63,12 @@ public class LazyTemplatesDirectoryTest {
 
     @AfterClass(alwaysRun = true)
     public void cleanUp() throws IOException {
-        Files.deleteIfExists(new File(templatesDir, TEMPLATE_NAME).toPath());
+        // Delete only what this test created; if setup failed part-way the folder may belong to someone else.
+        if (createdTemplateFile) {
+            Files.deleteIfExists(new File(templatesDir, TEMPLATE_NAME).toPath());
+        }
         String[] remaining = templatesDir.list();
-        if (remaining != null && remaining.length == 0) {
+        if (createdTemplatesDir && remaining != null && remaining.length == 0) {
             Files.delete(templatesDir.toPath());
         }
         if (backupDir != null && !templatesDir.exists()) {
@@ -87,9 +94,10 @@ public class LazyTemplatesDirectoryTest {
 
     @Test(priority = 1)
     public void includePicksUpDirectoryCreatedAfterEngineInitialisation() throws IOException {
-        templatesDir.mkdirs();
+        createdTemplatesDir = templatesDir.mkdirs();
         assertTrue(templatesDir.isDirectory());
         Files.writeString(new File(templatesDir, TEMPLATE_NAME).toPath(), "Hello ${name} from lazy-check");
+        createdTemplateFile = true;
         String template = "[<#include \"" + TEMPLATE_NAME + "\">]";
 
         for (TemplateEngine engine : new TemplateEngine[]{singleton, engineCreatedWithoutDirectory}) {
