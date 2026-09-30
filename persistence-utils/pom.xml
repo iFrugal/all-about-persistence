@@ -14,7 +14,7 @@
 
 
     <properties>
-        <jakson.version>2.18.3</jakson.version>
+        <jakson.version>2.21.5</jakson.version>
     </properties>
 
 
@@ -70,5 +70,22 @@
 
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- SimpleTemplateEngineOnlyTest and LazyTemplatesDirectoryTest both create
+                 and delete files in the same working-directory "templates" folder (the
+                 latter also moves the folder aside while it runs). ifrugal-parent runs
+                 Surefire with forkCount=3, and separate forks share that folder, so the
+                 two classes must not run concurrently. One fork keeps them sequential. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkCount>1</forkCount>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

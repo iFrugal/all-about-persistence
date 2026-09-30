@@ -23,7 +23,7 @@
 <dependency>
     <groupId>com.github.ifrugal</groupId>
     <artifactId>read-easy</artifactId>
-    <version>1.0.46-SNAPSHOT</version>
+    <version>1.0.54</version>
 </dependency>
 ```
 
@@ -34,18 +34,18 @@
 readeasy:
   # Option A: Single default reader
   generalReaderInit:
-    fqcn: lazydevs.persistence.impl.jdbc.JdbcGeneralReader
+    fqcn: lazydevs.persistence.jdbc.general.JdbcGeneralReader
     args:
       - beanRef:simpleJdbcTemplate
 
   # Option B: Multiple named readers
   generalReaders:
     default:
-      fqcn: lazydevs.persistence.impl.jdbc.JdbcGeneralReader
+      fqcn: lazydevs.persistence.jdbc.general.JdbcGeneralReader
       args:
         - beanRef:simpleJdbcTemplate
     mongodb:
-      fqcn: lazydevs.persistence.impl.mongodb.MongoGeneralReader
+      fqcn: lazdevs.peristence.mongo.reader.general.MongoGeneralReader
       args:
         - beanRef:mongoTemplate
 
@@ -131,6 +131,12 @@ POST /read/export?queryId=users.activeUsers
 Content-Type: application/json
 {}
 ```
+
+### Spring Boot compatibility
+
+Read-Easy works on Spring Boot 3.5.x and 4.1.x.
+Read-Easy and dyna-beans-injector each register their auto-configuration through `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`, so the host no longer needs a manual `@Import` of `DynaBeansAutoConfiguration`.
+See the [root README](../../README.md#spring-boot-compatibility) for the full compatibility table and the [Jackson policy](../../README.md#jackson).
 
 ## API Reference
 
@@ -474,7 +480,7 @@ in the same change as the version bump**, not as a follow-up.
 # application.yml
 readeasy:
   generalReaderInit:
-    fqcn: lazydevs.persistence.impl.jdbc.JdbcGeneralReader
+    fqcn: lazydevs.persistence.jdbc.general.JdbcGeneralReader
     args:
       - beanRef:simpleJdbcTemplate
 
@@ -497,7 +503,7 @@ queries:
 readeasy:
   generalReaders:
     mongo:
-      fqcn: lazydevs.persistence.impl.mongodb.MongoGeneralReader
+      fqcn: lazdevs.peristence.mongo.reader.general.MongoGeneralReader
       args:
         - beanRef:mongoTemplate
 
@@ -522,7 +528,7 @@ queries:
 readeasy:
   generalReaders:
     api:
-      fqcn: lazydevs.persistence.impl.rest.RestGeneralReader
+      fqcn: lazydevs.persistence.impl.rest.reader.RestGeneralReader
       args:
         - beanRef:restTemplate
 
@@ -608,7 +614,7 @@ public class RequestContextSupplier implements Supplier<Map<String, Object>> {
     public Map<String, Object> get() {
         return Map.of(
             "userId", SecurityContextHolder.getContext().getAuthentication().getName(),
-            "tenantId", TenantContext.getCurrentTenant()
+            "tenantId", TenantContext.getTenantId()
         );
     }
 }

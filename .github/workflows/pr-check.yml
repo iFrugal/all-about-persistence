@@ -2,8 +2,9 @@ name: PR Checks
 
 # The release workflow deliberately skips tests (-Dmaven.test.skip=true),
 # so this workflow is the only place the test suites gate anything.
-# It runs the full reactor's JUnit 5 and TestNG suites on every pull request.
-# ubuntu-latest runners provide Docker, so Testcontainers-based tests run here too.
+# It runs the full reactor's JUnit Jupiter and TestNG suites on every pull request,
+# once per supported Spring Boot line and Java version.
+# The suites need no external services: databases are in-memory (H2).
 
 on:
   pull_request:
@@ -16,7 +17,13 @@ concurrency:
 
 jobs:
   build-and-test:
+    name: Boot ${{ matrix.spring-boot }} / Java ${{ matrix.java }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        spring-boot: [ '3.5.16', '4.1.1' ]
+        java: [ '21', '25' ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,8 +32,8 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'corretto'
-          java-version: '21'
+          java-version: ${{ matrix.java }}
           cache: maven
 
       - name: Build and test
-        run: mvn -B -ntp -Dgpg.skip=true test
+        run: mvn -B -ntp -Dgpg.skip=true -Dspring-boot.version=${{ matrix.spring-boot }} test

@@ -1,0 +1,21 @@
+# Profile used by the Spring-context tests under lazydevs.readeasy.it.
+# The datasource is Boot's embedded H2 (unique name per context), no URL needed.
+spring:
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:readeasy-it/schema.sql
+      data-locations: classpath:readeasy-it/data.sql
+
+readeasy:
+  generalReaders:
+    default:
+      fqcn: lazydevs.persistence.jdbc.general.JdbcGeneralReader
+      constructorArgs:
+        - typeFqcn: javax.sql.DataSource
+          beanName: dataSource
+  queryFiles:
+    items:
+      - classpath:readeasy-it/item-queries.yaml
+  multitenancy:
+    enabled: true

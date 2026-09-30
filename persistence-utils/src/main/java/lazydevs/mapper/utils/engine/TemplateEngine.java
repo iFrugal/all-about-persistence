@@ -2,7 +2,6 @@ package lazydevs.mapper.utils.engine;
 
 
 import freemarker.cache.ClassTemplateLoader;
-import freemarker.cache.FileTemplateLoader;
 import freemarker.cache.MultiTemplateLoader;
 import freemarker.cache.TemplateLoader;
 import freemarker.ext.util.WrapperTemplateModel;
@@ -33,31 +32,12 @@ public class TemplateEngine {
     private void init() {
         this.configuration = new Configuration(new Version(2, 3, 23));
 
-        // Set up template loaders
+        // Classpath templates take precedence over the working-directory "templates"
+        // folder. The folder is resolved lazily on each lookup, so it is picked up even
+        // when it is created after this singleton was initialised.
         ClassTemplateLoader classLoader = new ClassTemplateLoader(this.getClass(), "/templates");
-
-        // Handle FileTemplateLoader gracefully - it's optional
-        List<TemplateLoader> loaders = new ArrayList<>();
-        loaders.add(classLoader);
-
-        try {
-            FileTemplateLoader fileLoader = new FileTemplateLoader(new File("templates"));
-            loaders.add(fileLoader);
-            System.out.println("✅ FileTemplateLoader: Found templates directory");
-        } catch (IOException e) {
-            System.out.println("ℹ️  FileTemplateLoader: templates directory not found, using classpath only");
-            // Continue without file loader - this is OK
-        }
-
-        // Use available loaders
-        if (loaders.size() == 1) {
-            this.configuration.setTemplateLoader(loaders.get(0));
-        } else {
-            MultiTemplateLoader multiLoader = new MultiTemplateLoader(
-                    loaders.toArray(new TemplateLoader[0])
-            );
-            this.configuration.setTemplateLoader(multiLoader);
-        }
+        TemplateLoader fileLoader = new LazyDirectoryTemplateLoader(new File("templates"));
+        this.configuration.setTemplateLoader(new MultiTemplateLoader(new TemplateLoader[]{classLoader, fileLoader}));
 
         this.configuration.setDefaultEncoding("UTF-8");
         this.configuration.setLocale(Locale.US);
